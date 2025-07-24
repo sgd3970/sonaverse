@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import TiptapEditorDynamic from '@/components/admin/TiptapEditorDynamic';
+import type { TiptapEditorRef } from '@/components/admin/TiptapEditor';
 
 const NewBlogPage: React.FC = () => {
   const router = useRouter();
@@ -19,7 +20,10 @@ const NewBlogPage: React.FC = () => {
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
-  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  
+  // 에디터 ref 추가
+  const koEditorRef = useRef<TiptapEditorRef>(null);
+  const enEditorRef = useRef<TiptapEditorRef>(null);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -41,99 +45,41 @@ const NewBlogPage: React.FC = () => {
     }));
   };
 
-  // 썸네일 업로드 핸들러 (공통)
-  const handleThumbnailChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // 썸네일 파일 선택 핸들러 (임시 저장만)
+  const handleThumbnailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    // 파일 타입 검증
-    if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 업로드 가능합니다.');
-      return;
-    }
-
-    // 파일 크기 검증 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('파일 크기는 5MB 이하여야 합니다.');
-      return;
-    }
-
-    setThumbnailFile(file);
-    
-    // 미리보기 생성
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setThumbnailPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // slug가 있으면 바로 업로드
-    if (formData.slug) {
-      await uploadThumbnail(file);
+    if (file) {
+      setThumbnailFile(file);
+      // 미리보기를 위한 임시 URL 생성
+      const tempUrl = URL.createObjectURL(file);
+      setThumbnailPreview(tempUrl);
     }
   };
 
-  // 썸네일 업로드 함수
-  const uploadThumbnail = async (file: File) => {
-    if (!formData.slug) {
-      alert('먼저 슬러그를 입력해주세요.');
-      return;
+  // 썸네일을 실제 blob으로 업로드하는 함수
+  const uploadThumbnail = async (file: File, slug: string): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', `blog/${slug}`);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('썸네일 업로드 실패');
     }
 
-    setUploadingThumbnail(true);
-    try {
-      const formDataObj = new FormData();
-      formDataObj.append('file', file);
-      formDataObj.append('type', 'thumbnail');
-      formDataObj.append('filename', `${formData.slug}_thumbnail`);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formDataObj,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '썸네일 업로드 실패');
-      }
-
-      const result = await response.json();
-      
-      // 양쪽 언어의 thumbnail_url 업데이트
-      setFormData(prev => ({
-        ...prev,
-        content: {
-          ko: { ...prev.content.ko, thumbnail_url: result.url },
-          en: { ...prev.content.en, thumbnail_url: result.url }
-        }
-      }));
-
-    } catch (error) {
-      console.error('썸네일 업로드 오류:', error);
-      alert('썸네일 업로드에 실패했습니다.');
-    } finally {
-      setUploadingThumbnail(false);
-    }
+    const data = await response.json();
+    return data.url;
   };
 
-  // 슬러그 변경 시 썸네일 자동 업로드
-  const handleSlugChange = async (value: string) => {
-    // 슬러그 유효성 검사 (영문, 숫자, 하이픈만 허용)
-    const slugRegex = /^[a-z0-9-]+$/;
-    if (value && !slugRegex.test(value)) {
-      alert('슬러그는 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.');
-      return;
-    }
-
-    setFormData(prev => ({ ...prev, slug: value }));
-
-    // 썸네일 파일이 있고 슬러그가 변경되었으면 업로드
-    if (thumbnailFile && value) {
-      await uploadThumbnail(thumbnailFile);
-    }
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    handleInputChange('slug', value);
   };
 
-  // 태그 문자열을 배열로 변환
   const parseTagsToArray = (tagsString: string): string[] => {
     return tagsString
       .split(',')
@@ -144,42 +90,72 @@ const NewBlogPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 유효성 검사
-    if (!formData.slug) {
-      alert('슬러그를 입력해주세요.');
-      return;
-    }
-    
-    if (!formData.content.ko.title) {
-      alert('한국어 제목을 입력해주세요.');
-      return;
-    }
-
-    if (!formData.content.ko.body) {
-      alert('한국어 본문을 입력해주세요.');
+    if (!formData.slug.trim() || !formData.content.ko.title.trim() || !formData.content.en.title.trim()) {
+      alert('필수 필드를 모두 입력해주세요.');
       return;
     }
 
     setLoading(true);
     
     try {
-      // 썸네일이 있지만 아직 업로드되지 않은 경우
-      if (thumbnailFile && !formData.content.ko.thumbnail_url) {
-        await uploadThumbnail(thumbnailFile);
+      let thumbnailUrl = '';
+
+      // 썸네일 업로드 (있는 경우)
+      if (thumbnailFile) {
+        try {
+          thumbnailUrl = await uploadThumbnail(thumbnailFile, formData.slug);
+        } catch (error) {
+          alert('썸네일 업로드에 실패했습니다.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 에디터의 임시 이미지를 실제 blob으로 업로드
+      let updatedKoBody = formData.content.ko.body;
+      let updatedEnBody = formData.content.en.body;
+
+      if (koEditorRef.current) {
+        try {
+          updatedKoBody = await koEditorRef.current.uploadTempImagesToBlob(formData.slug);
+        } catch (error) {
+          console.error('한국어 에디터 이미지 업로드 실패:', error);
+        }
+      }
+
+      if (enEditorRef.current) {
+        try {
+          updatedEnBody = await enEditorRef.current.uploadTempImagesToBlob(formData.slug);
+        } catch (error) {
+          console.error('영어 에디터 이미지 업로드 실패:', error);
+        }
       }
 
       const tagsArray = parseTagsToArray(formData.tags);
       
       const submitData = {
         ...formData,
+        content: {
+          ko: {
+            ...formData.content.ko,
+            body: updatedKoBody,
+            thumbnail_url: thumbnailUrl
+          },
+          en: {
+            ...formData.content.en,
+            body: updatedEnBody,
+            thumbnail_url: thumbnailUrl
+          }
+        },
         tags: tagsArray
       };
 
+      const token = localStorage.getItem('adminToken');
       const response = await fetch('/api/blog', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(submitData)
       });
@@ -189,28 +165,29 @@ const NewBlogPage: React.FC = () => {
         throw new Error(errorData.error || '블로그 포스트 생성에 실패했습니다.');
       }
 
-      alert('블로그 포스트가 성공적으로 생성되었습니다.');
+      alert('블로그 포스트가 성공적으로 생성되었습니다!');
       router.push('/admin/blog');
-      
     } catch (error) {
       console.error('블로그 포스트 생성 오류:', error);
-      alert(error instanceof Error ? error.message : '블로그 포스트 생성에 실패했습니다.');
+      alert(error instanceof Error ? error.message : '오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">새 블로그 포스트 작성</h1>
-          <Link 
-            href="/admin/blog" 
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            ← 목록으로 돌아가기
-          </Link>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">새 블로그 포스트 작성</h1>
+            <Link
+              href="/admin/blog"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              ← 목록으로 돌아가기
+            </Link>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -225,70 +202,52 @@ const NewBlogPage: React.FC = () => {
                 <input
                   type="text"
                   value={formData.slug}
-                  onChange={(e) => handleSlugChange(e.target.value)}
+                  onChange={handleSlugChange}
                   placeholder="예: my-blog-post"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  영문 소문자, 숫자, 하이픈(-)만 사용 가능
-                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  태그
+                  태그 (쉼표로 구분)
                 </label>
                 <input
                   type="text"
                   value={formData.tags}
                   onChange={(e) => handleInputChange('tags', e.target.value)}
-                  placeholder="태그1, 태그2, 태그3"
+                  placeholder="예: 기술, 혁신, 제품"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  쉼표(,)로 구분하여 입력
-                </p>
               </div>
-            </div>
-            
-            <div className="mt-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.is_published}
-                  onChange={(e) => handleInputChange('is_published', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">즉시 발행</span>
-              </label>
             </div>
           </div>
 
           {/* 썸네일 업로드 */}
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <h2 className="text-lg font-semibold mb-4 text-gray-800">썸네일 이미지</h2>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                썸네일 (공통)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleThumbnailChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              {uploadingThumbnail && (
-                <p className="text-sm text-blue-600 mt-2">썸네일 업로드 중...</p>
-              )}
-              {thumbnailPreview && (
-                <div className="mt-4">
-                  <img 
-                    src={thumbnailPreview} 
-                    alt="썸네일 미리보기" 
-                    className="max-w-xs h-auto rounded-lg border"
-                  />
-                </div>
-              )}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  썸네일 업로드
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleThumbnailChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {thumbnailPreview && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600 mb-2">미리보기:</p>
+                    <img 
+                      src={thumbnailPreview} 
+                      alt="썸네일 미리보기" 
+                      className="w-32 h-32 object-cover rounded-lg border"
+                    />
+                    <p className="text-xs text-orange-600 mt-1">※ 임시 이미지입니다. 생성 버튼 클릭 시 실제 업로드됩니다.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -305,7 +264,6 @@ const NewBlogPage: React.FC = () => {
                   value={formData.content.ko.title}
                   onChange={(e) => handleContentChange('ko', 'title', e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
                 />
               </div>
               <div>
@@ -324,6 +282,7 @@ const NewBlogPage: React.FC = () => {
                   본문 *
                 </label>
                 <TiptapEditorDynamic
+                  ref={koEditorRef}
                   value={formData.content.ko.body}
                   onChange={(value) => handleContentChange('ko', 'body', value)}
                   slug={formData.slug}
@@ -339,7 +298,7 @@ const NewBlogPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  제목
+                  제목 *
                 </label>
                 <input
                   type="text"
@@ -361,9 +320,10 @@ const NewBlogPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  본문
+                  본문 *
                 </label>
                 <TiptapEditorDynamic
+                  ref={enEditorRef}
                   value={formData.content.en.body}
                   onChange={(value) => handleContentChange('en', 'body', value)}
                   slug={formData.slug}
@@ -373,18 +333,35 @@ const NewBlogPage: React.FC = () => {
             </div>
           </div>
 
+          {/* 공개 설정 */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">공개 설정</h2>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="is_published"
+                checked={formData.is_published}
+                onChange={(e) => handleInputChange('is_published', e.target.checked)}
+                className="mr-2"
+              />
+              <label htmlFor="is_published" className="text-sm text-gray-700">
+                즉시 공개
+              </label>
+            </div>
+          </div>
+
           {/* 제출 버튼 */}
           <div className="flex justify-end space-x-4">
             <Link
               href="/admin/blog"
-              className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               취소
             </Link>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {loading ? '생성 중...' : '생성하기'}
             </button>

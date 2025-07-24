@@ -7,7 +7,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
  */
 export interface IBlogPostContent {
   title: string;
-  summary: string;
+  subtitle: string;
   body: string;
   thumbnail_url: string;
 }
@@ -24,7 +24,7 @@ export interface IBlogPost extends Document {
 
 const BlogPostContentSchema = new Schema<IBlogPostContent>({
   title: { type: String, required: true },
-  summary: { type: String, required: true },
+  subtitle: { type: String, required: true },
   body: { type: String, required: true },
   thumbnail_url: { type: String, required: true },
 });

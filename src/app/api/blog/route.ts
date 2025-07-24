@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
       query.$or = [
         { 'content.ko.title': { $regex: search, $options: 'i' } },
         { 'content.en.title': { $regex: search, $options: 'i' } },
-        { 'content.ko.summary': { $regex: search, $options: 'i' } },
-        { 'content.en.summary': { $regex: search, $options: 'i' } },
+        { 'content.ko.subtitle': { $regex: search, $options: 'i' } },
+        { 'content.en.subtitle': { $regex: search, $options: 'i' } },
         { tags: { $regex: search, $options: 'i' } }
       ];
     }

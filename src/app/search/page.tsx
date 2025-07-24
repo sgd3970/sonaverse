@@ -11,32 +11,32 @@ const mockResults = [
     slug: 'our-company-new-vision-2025',
     title_ko: '새로운 비전 2025, 더 나은 미래를 향하여',
     title_en: 'New Vision 2025, Towards a Better Future',
-    summary_ko: '2025년, 저희 회사는 새로운 비전을 선포하며...',
-    summary_en: 'In 2025, our company declares a new vision...',
+    subtitle_ko: '2025년, 저희 회사는 새로운 비전을 선포하며...',
+    subtitle_en: 'In 2025, our company declares a new vision...',
   },
   {
     type: 'product',
     slug: 'manbo-walker',
     title_ko: '만보 보행기',
     title_en: 'Manbo Walker',
-    summary_ko: '어르신들의 안전하고 편안한 보행을 돕는 제품',
-    summary_en: 'A product that helps seniors walk safely and comfortably.',
+    subtitle_ko: '어르신들의 안전하고 편안한 보행을 돕는 제품',
+    subtitle_en: 'A product that helps seniors walk safely and comfortably.',
   },
   {
     type: 'press',
     slug: 'company-awarded-innovation-prize',
     title_ko: '당사, 2025 혁신 기술상 수상',
     title_en: 'Our Company Wins 2025 Innovation Technology Award',
-    summary_ko: '저희 회사가 2025 혁신 기술상을 수상했습니다...',
-    summary_en: 'Our company has won the 2025 Innovation Technology Award...',
+    subtitle_ko: '저희 회사가 2025 혁신 기술상을 수상했습니다...',
+    subtitle_en: 'Our company has won the 2025 Innovation Technology Award...',
   },
   {
     type: 'brand_story',
     slug: 'our-journey-from-startup-to-leader',
     title_ko: '스타트업에서 리더로: 우리의 여정',
     title_en: 'From Startup to Leader: Our Journey',
-    summary_ko: '작은 아이디어에서 시작하여 산업을 선도하기까지의 여정.',
-    summary_en: 'From a small idea to leading the industry.',
+    subtitle_ko: '작은 아이디어에서 시작하여 산업을 선도하기까지의 여정.',
+    subtitle_en: 'From a small idea to leading the industry.',
   },
 ];
 
@@ -52,8 +52,8 @@ const SearchPage: React.FC = () => {
     setResults(
       mockResults.filter(item =>
         (i18n.language === 'en'
-          ? item.title_en.toLowerCase() + item.summary_en.toLowerCase()
-          : item.title_ko + item.summary_ko
+          ? item.title_en.toLowerCase() + item.subtitle_en.toLowerCase()
+          : item.title_ko + item.subtitle_ko
         ).includes(q)
       )
     );
@@ -88,7 +88,7 @@ const SearchPage: React.FC = () => {
                 <Link href={`/${item.type === 'brand_story' ? 'brand-story' : item.type}/${item.slug}`} className="text-lg font-semibold hover:underline">
                   {i18n.language === 'en' ? item.title_en : item.title_ko}
                 </Link>
-                <div className="text-gray-600 mt-1">{i18n.language === 'en' ? item.summary_en : item.summary_ko}</div>
+                <div className="text-gray-600 mt-1">{i18n.language === 'en' ? item.subtitle_en : item.subtitle_ko}</div>
               </li>
             ))}
           </ul>

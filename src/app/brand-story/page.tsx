@@ -5,26 +5,24 @@ import { useTranslation } from 'react-i18next';
 import '../../app/i18n';
 import Link from 'next/link';
 
-const stories = [
+const mockBrandStories = [
   {
     slug: 'our-journey-from-startup-to-leader',
     title_ko: '스타트업에서 리더로: 우리의 여정',
     title_en: 'From Startup to Leader: Our Journey',
-    summary_ko: '작은 아이디어에서 시작하여 산업을 선도하기까지의 여정.',
-    summary_en: 'From a small idea to leading the industry.',
-    date: '2025-07-15',
-    thumbnail_ko: '/brand_story/brand_story_thumb_ko.jpg',
-    thumbnail_en: '/brand_story/brand_story_thumb_en.jpg',
+    subtitle_ko: '작은 아이디어에서 시작하여 산업을 선도하기까지의 여정.',
+    subtitle_en: 'From a small idea to leading the industry.',
+    published_date: '2024-01-15',
+    image_url: '/logo/symbol_logo.png'
   },
   {
-    slug: 'brand-value-and-innovation',
-    title_ko: '브랜드 가치와 혁신',
-    title_en: 'Brand Value and Innovation',
-    summary_ko: '브랜드의 핵심 가치와 혁신 사례를 소개합니다.',
-    summary_en: 'Introducing the core values and innovation cases of the brand.',
-    date: '2025-06-30',
-    thumbnail_ko: '/brand_story/brand_story_thumb2_ko.jpg',
-    thumbnail_en: '/brand_story/brand_story_thumb2_en.jpg',
+    slug: 'innovation-at-the-core-of-our-brand',
+    title_ko: '브랜드의 핵심, 혁신',
+    title_en: 'Innovation at the Core of Our Brand',
+    subtitle_ko: '브랜드의 핵심 가치와 혁신 사례를 소개합니다.',
+    subtitle_en: 'Introducing the core values and innovation cases of the brand.',
+    published_date: '2024-02-20',
+    image_url: '/logo/symbol_logo.png'
   },
 ];
 
@@ -57,13 +55,13 @@ const BrandStoryPage: React.FC = () => {
       <div className="max-w-5xl w-full">
         <h1 className="text-3xl md:text-4xl font-bold mb-8">{t('brand_story', '브랜드 스토리')}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-          {stories.map(item => (
+          {mockBrandStories.map(item => (
             <Link key={item.slug} href={`/brand-story/${item.slug}`} className="bg-gray-50 rounded-lg shadow hover:shadow-lg transition flex flex-col">
-              <img src={i18n.language === 'en' ? item.thumbnail_en : item.thumbnail_ko} alt={i18n.language === 'en' ? item.title_en : item.title_ko} className="w-full h-48 object-cover rounded-t" />
+              <img src={item.image_url} alt={i18n.language === 'en' ? item.title_en : item.title_ko} className="w-full h-48 object-cover rounded-t" />
               <div className="p-6 flex flex-col flex-1">
                 <h2 className="text-xl font-semibold mb-2">{i18n.language === 'en' ? item.title_en : item.title_ko}</h2>
-                <p className="text-gray-600 mb-4 flex-1">{i18n.language === 'en' ? item.summary_en : item.summary_ko}</p>
-                <div className="text-sm text-gray-400">{item.date}</div>
+                <p className="text-gray-600 mb-4 flex-1">{i18n.language === 'en' ? item.subtitle_en : item.subtitle_ko}</p>
+                <div className="text-sm text-gray-400">{item.published_date}</div>
               </div>
             </Link>
           ))}

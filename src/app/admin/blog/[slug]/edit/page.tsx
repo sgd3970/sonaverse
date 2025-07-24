@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import TiptapEditorDynamic from '@/components/admin/TiptapEditorDynamic';
+import type { TiptapEditorRef } from '@/components/admin/TiptapEditor';
 
 interface BlogFormData {
   slug: string;
@@ -23,7 +24,10 @@ const EditBlogPage: React.FC = () => {
   const [formData, setFormData] = useState<BlogFormData | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
-  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  
+  // 에디터 ref 추가
+  const koEditorRef = useRef<TiptapEditorRef>(null);
+  const enEditorRef = useRef<TiptapEditorRef>(null);
 
   useEffect(() => {
     if (slug) {
@@ -91,8 +95,8 @@ const EditBlogPage: React.FC = () => {
     }) : null);
   };
 
-  // 썸네일 업로드 핸들러
-  const handleThumbnailChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // 썸네일 파일 선택 핸들러 (임시 저장만)
+  const handleThumbnailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !formData) return;
 
@@ -116,21 +120,15 @@ const EditBlogPage: React.FC = () => {
       setThumbnailPreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
-
-    // 바로 업로드
-    await uploadThumbnail(file);
   };
 
-  // 썸네일 업로드 함수
-  const uploadThumbnail = async (file: File) => {
-    if (!formData) return;
-
-    setUploadingThumbnail(true);
+  // 썸네일 업로드 함수 (실제 blob 업로드)
+  const uploadThumbnail = async (file: File, slug: string) => {
     try {
       const formDataObj = new FormData();
       formDataObj.append('file', file);
       formDataObj.append('type', 'thumbnail');
-      formDataObj.append('filename', `${formData.slug}_thumbnail`);
+      formDataObj.append('filename', `${slug}_thumbnail`);
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -143,21 +141,11 @@ const EditBlogPage: React.FC = () => {
       }
 
       const result = await response.json();
-      
-      // 양쪽 언어의 thumbnail_url 업데이트
-      setFormData(prev => prev ? ({
-        ...prev,
-        content: {
-          ko: { ...prev.content.ko, thumbnail_url: result.url },
-          en: { ...prev.content.en, thumbnail_url: result.url }
-        }
-      }) : null);
+      return result.url;
 
     } catch (error) {
       console.error('썸네일 업로드 오류:', error);
-      alert('썸네일 업로드에 실패했습니다.');
-    } finally {
-      setUploadingThumbnail(false);
+      throw error;
     }
   };
 
@@ -188,15 +176,55 @@ const EditBlogPage: React.FC = () => {
     setLoading(true);
     
     try {
-      // 새 썸네일이 있지만 아직 업로드되지 않은 경우
-      if (thumbnailFile && !formData.content.ko.thumbnail_url) {
-        await uploadThumbnail(thumbnailFile);
+      let thumbnailUrl = formData.content.ko.thumbnail_url; // 기존 썸네일 URL 유지
+
+      // 새 썸네일이 있는 경우 업로드
+      if (thumbnailFile) {
+        try {
+          thumbnailUrl = await uploadThumbnail(thumbnailFile, formData.slug);
+        } catch (error) {
+          alert('썸네일 업로드에 실패했습니다.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 에디터의 임시 이미지를 실제 blob으로 업로드
+      let updatedKoBody = formData.content.ko.body;
+      let updatedEnBody = formData.content.en.body;
+
+      if (koEditorRef.current) {
+        try {
+          updatedKoBody = await koEditorRef.current.uploadTempImagesToBlob(formData.slug);
+        } catch (error) {
+          console.error('한국어 에디터 이미지 업로드 실패:', error);
+        }
+      }
+
+      if (enEditorRef.current) {
+        try {
+          updatedEnBody = await enEditorRef.current.uploadTempImagesToBlob(formData.slug);
+        } catch (error) {
+          console.error('영어 에디터 이미지 업로드 실패:', error);
+        }
       }
 
       const tagsArray = parseTagsToArray(formData.tags);
       
       const submitData = {
         ...formData,
+        content: {
+          ko: { 
+            ...formData.content.ko, 
+            body: updatedKoBody,
+            thumbnail_url: thumbnailUrl
+          },
+          en: { 
+            ...formData.content.en, 
+            body: updatedEnBody,
+            thumbnail_url: thumbnailUrl
+          }
+        },
         tags: tagsArray
       };
 
@@ -270,6 +298,7 @@ const EditBlogPage: React.FC = () => {
                   슬러그는 수정할 수 없습니다.
                 </p>
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   태그
@@ -313,8 +342,10 @@ const EditBlogPage: React.FC = () => {
                 onChange={handleThumbnailChange}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              {uploadingThumbnail && (
-                <p className="text-sm text-blue-600 mt-2">썸네일 업로드 중...</p>
+              {thumbnailFile && (
+                <p className="text-sm text-orange-600 mt-2">
+                  📸 새 썸네일이 임시 저장되었습니다. 수정 버튼 클릭 시 업로드됩니다.
+                </p>
               )}
               {thumbnailPreview && (
                 <div className="mt-4">
@@ -323,6 +354,9 @@ const EditBlogPage: React.FC = () => {
                     alt="썸네일 미리보기" 
                     className="max-w-xs h-auto rounded-lg border"
                   />
+                  {thumbnailFile && (
+                    <p className="text-xs text-gray-500 mt-1">새로 선택된 썸네일</p>
+                  )}
                 </div>
               )}
             </div>
@@ -360,6 +394,7 @@ const EditBlogPage: React.FC = () => {
                   본문 *
                 </label>
                 <TiptapEditorDynamic
+                  ref={koEditorRef}
                   value={formData.content.ko.body}
                   onChange={(value) => handleContentChange('ko', 'body', value)}
                   slug={formData.slug}
@@ -400,6 +435,7 @@ const EditBlogPage: React.FC = () => {
                   본문
                 </label>
                 <TiptapEditorDynamic
+                  ref={enEditorRef}
                   value={formData.content.en.body}
                   onChange={(value) => handleContentChange('en', 'body', value)}
                   slug={formData.slug}
@@ -411,9 +447,9 @@ const EditBlogPage: React.FC = () => {
 
           {/* 제출 버튼 */}
           <div className="flex justify-end space-x-4">
-            <Link
+            <Link 
               href="/admin/blog"
-              className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
               취소
             </Link>
@@ -422,7 +458,7 @@ const EditBlogPage: React.FC = () => {
               disabled={loading}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? '수정 중...' : '수정하기'}
+              {loading ? '수정 중...' : '블로그 포스트 수정'}
             </button>
           </div>
         </form>

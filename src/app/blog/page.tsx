@@ -11,12 +11,12 @@ interface BlogPost {
   content: {
     ko?: {
       title: string;
-      summary: string;
+      subtitle: string;
       thumbnail_url: string;
     };
     en?: {
       title: string;
-      summary: string;
+      subtitle: string;
       thumbnail_url: string;
     };
   };
@@ -158,7 +158,7 @@ const BlogPage: React.FC = () => {
                       className="text-gray-700 truncate"
                       style={{ fontSize: 'clamp(0.9rem, 1.2vw, 1.1rem)' }}
                     >
-                      {content.summary}
+                      {content.subtitle}
                     </p>
                     <div className="flex items-center text-gray-500 mt-auto pt-2" style={{ fontSize: 'clamp(0.8rem, 1vw, 1rem)' }}>
                       <span>{formatDate(post.created_at)}</span>

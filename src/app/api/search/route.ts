@@ -33,21 +33,21 @@ export async function GET(request: NextRequest) {
       BlogPost.find({
         $or: [
           { [`title.${lang}`]: searchRegex },
-          { [`summary.${lang}`]: searchRegex },
+          { [`subtitle.${lang}`]: searchRegex },
           { [`content.${lang}`]: searchRegex }
         ]
       }).limit(10),
       PressRelease.find({
         $or: [
           { [`title.${lang}`]: searchRegex },
-          { [`summary.${lang}`]: searchRegex },
+          { [`subtitle.${lang}`]: searchRegex },
           { [`content.${lang}`]: searchRegex }
         ]
       }).limit(10),
       BrandStory.find({
         $or: [
           { [`title.${lang}`]: searchRegex },
-          { [`summary.${lang}`]: searchRegex },
+          { [`subtitle.${lang}`]: searchRegex },
           { [`content.${lang}`]: searchRegex }
         ]
       }).limit(10)

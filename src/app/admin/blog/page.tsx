@@ -9,11 +9,11 @@ interface BlogPost {
   content: {
     ko?: {
       title: string;
-      summary: string;
+      subtitle: string;
     };
     en?: {
       title: string;
-      summary: string;
+      subtitle: string;
     };
   };
   created_at: string;

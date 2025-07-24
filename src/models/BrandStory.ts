@@ -7,7 +7,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
  */
 export interface IBrandStoryContent {
   title: string;
-  summary: string;
+  subtitle: string;
   body: string;
   thumbnail_url: string;
 }
@@ -23,7 +23,7 @@ export interface IBrandStory extends Document {
 
 const BrandStoryContentSchema = new Schema<IBrandStoryContent>({
   title: { type: String, required: true },
-  summary: { type: String, required: true },
+  subtitle: { type: String, required: true },
   body: { type: String, required: true },
   thumbnail_url: { type: String, required: true },
 });
