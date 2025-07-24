@@ -7,11 +7,12 @@ import Page from '../../../../models/Page';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     await dbConnect();
-    const page = await Page.findById(params.id);
+    const resolvedParams = await params;
+    const page = await Page.findOne({ slug: resolvedParams.slug });
     
     if (!page) {
       return NextResponse.json(
@@ -32,14 +33,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     await dbConnect();
+    const resolvedParams = await params;
     const body = await request.json();
     
-    const page = await Page.findByIdAndUpdate(
-      params.id,
+    const page = await Page.findOneAndUpdate(
+      { slug: resolvedParams.slug },
       { ...body, updated_at: new Date() },
       { new: true, runValidators: true }
     );
@@ -63,11 +65,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     await dbConnect();
-    const page = await Page.findByIdAndDelete(params.id);
+    const resolvedParams = await params;
+    const page = await Page.findOneAndDelete({ slug: resolvedParams.slug });
     
     if (!page) {
       return NextResponse.json(

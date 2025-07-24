@@ -39,4 +39,4 @@ const PressReleaseSchema = new Schema<IPressRelease>({
   is_active: { type: Boolean, default: true },
 });
 
-export default mongoose.models.PressRelease || mongoose.model<IPressRelease>('PressRelease', PressReleaseSchema); 
+export default mongoose.models.PressRelease || mongoose.model<IPressRelease>('PressRelease', PressReleaseSchema, 'press'); 

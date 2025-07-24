@@ -2,65 +2,71 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 const AdminSidebar: React.FC = () => {
   const pathname = usePathname();
-  const [lang, setLang] = useState<'ko' | 'en'>('ko');
+  const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    router.push('/admin/login');
+  };
 
   const menuItems = [
     {
       key: 'dashboard',
-      label: { ko: '대시보드', en: 'Dashboard' },
+      label: '대시보드',
       href: '/admin',
       icon: '📊'
     },
     {
       key: 'pages',
-      label: { ko: '페이지 관리', en: 'Pages' },
+      label: '페이지 관리',
       href: '/admin/pages',
       icon: '📄'
     },
     {
       key: 'products',
-      label: { ko: '제품 관리', en: 'Products' },
+      label: '제품 관리',
       href: '/admin/products',
       icon: '🛍️'
     },
     {
       key: 'blog',
-      label: { ko: '블로그 관리', en: 'Blog' },
+      label: '블로그 관리',
       href: '/admin/blog',
       icon: '📝'
     },
     {
       key: 'press',
-      label: { ko: '언론보도 관리', en: 'Press Releases' },
+      label: '언론보도 관리',
       href: '/admin/press',
       icon: '📰'
     },
     {
       key: 'brand-story',
-      label: { ko: '브랜드 스토리 관리', en: 'Brand Stories' },
+      label: '브랜드 스토리 관리',
       href: '/admin/brand-story',
       icon: '🏢'
     },
     {
       key: 'company-history',
-      label: { ko: '회사 연혁 관리', en: 'Company History' },
+      label: '회사 연혁 관리',
       href: '/admin/company-history',
       icon: '📅'
     },
     {
       key: 'inquiries',
-      label: { ko: '문의 관리', en: 'Inquiries' },
+      label: '문의 관리',
       href: '/admin/inquiries',
       icon: '📧'
     },
     {
       key: 'settings',
-      label: { ko: '설정', en: 'Settings' },
+      label: '설정',
       href: '/admin/settings',
       icon: '⚙️'
     }
@@ -94,16 +100,8 @@ const AdminSidebar: React.FC = () => {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-800">
-              {lang === 'ko' ? '관리자' : 'Admin'}
+              관리자
             </h1>
-            <select
-              className="text-sm border rounded px-2 py-1"
-              value={lang}
-              onChange={(e) => setLang(e.target.value as 'ko' | 'en')}
-            >
-              <option value="ko">한국어</option>
-              <option value="en">English</option>
-            </select>
           </div>
         </div>
         
@@ -121,22 +119,29 @@ const AdminSidebar: React.FC = () => {
                   }`}
                 >
                   <span className="text-lg">{item.icon}</span>
-                  <span>{item.label[lang]}</span>
+                  <span>{item.label}</span>
                 </Link>
               </li>
             ))}
           </ul>
           
           {/* Back to Site Link */}
-          <div className="mt-8 pt-4 border-t">
+          <div className="mt-8 pt-4 border-t space-y-2">
             <Link
               href="/"
               onClick={() => setIsMobileOpen(false)}
               className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
               <span>🏠</span>
-              <span>{lang === 'ko' ? '사이트로 돌아가기' : 'Back to Site'}</span>
+              <span>사이트로 돌아가기</span>
             </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-800 transition-colors w-full text-left"
+            >
+              <span>🚪</span>
+              <span>로그아웃</span>
+            </button>
           </div>
         </nav>
       </div>

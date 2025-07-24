@@ -1,52 +1,134 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../../../app/i18n';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-const pressData = {
-  'company-awarded-innovation-prize': {
-    title_ko: '당사, 2025 혁신 기술상 수상',
-    title_en: 'Our Company Wins 2025 Innovation Technology Award',
-    date: '2025-07-20',
-    press_ko: '전자신문',
-    press_en: 'ET News',
-    body_ko: '<p>저희 회사가 2025 혁신 기술상을 수상했습니다...</p><img src="/press/press_image_ko.jpg" alt="수상 이미지" />',
-    body_en: '<p>Our company has won the 2025 Innovation Technology Award...</p><img src="/press/press_image_en.jpg" alt="Award Image" />',
-    external_link_ko: 'https://www.etnews.com/20250720000001',
-    external_link_en: 'https://www.etnews.com/en/20250720000001',
-  },
-  'company-featured-in-media': {
-    title_ko: '당사, 주요 언론에 소개',
-    title_en: 'Our Company Featured in Major Media',
-    date: '2025-06-15',
-    press_ko: '매일경제',
-    press_en: 'Maeil Business',
-    body_ko: '<p>당사가 주요 언론에 소개되었습니다...</p><img src="/press/press_image2_ko.jpg" alt="소개 이미지" />',
-    body_en: '<p>Our company was featured in major media...</p><img src="/press/press_image2_en.jpg" alt="Feature Image" />',
-    external_link_ko: 'https://www.mk.co.kr/news/business/2025/06/15/123456',
-    external_link_en: 'https://www.mk.co.kr/news/business/2025/06/15/123456',
-  },
-};
+interface PressData {
+  slug: string;
+  published_date: string;
+  press_name: string;
+  title: string;
+  body: string;
+  external_link?: string;
+  is_active: boolean;
+}
 
 const PressDetailPage: React.FC = () => {
   const { t, i18n } = useTranslation('common');
   const params = useParams();
+  const router = useRouter();
   const slug = params?.slug as string;
-  const data = pressData[slug];
+  
+  const [pressData, setPressData] = useState<PressData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!data) return <div className="text-center py-20">{t('not_found', '해당 보도 자료를 찾을 수 없습니다.')}</div>;
+  useEffect(() => {
+    const fetchPressData = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/press/${slug}?lang=${i18n.language}`);
+        
+        if (!res.ok) {
+          if (res.status === 404) {
+            setError('not_found');
+          } else {
+            setError('fetch_error');
+          }
+          return;
+        }
+        
+        const data = await res.json();
+        setPressData(data);
+      } catch (err) {
+        console.error('Error fetching press data:', err);
+        setError('fetch_error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (slug) {
+      fetchPressData();
+    }
+  }, [slug, i18n.language]);
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
+        <div className="text-center">
+          <div className="text-gray-400">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error === 'not_found' || !pressData) {
+    return (
+      <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">{t('not_found', '해당 보도 자료를 찾을 수 없습니다.')}</h1>
+          <Link href="/press" className="text-blue-600 hover:underline">
+            {t('back_to_list', '목록으로 돌아가기')}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (error === 'fetch_error') {
+    return (
+      <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">{t('error_occurred', '오류가 발생했습니다.')}</h1>
+          <Link href="/press" className="text-blue-600 hover:underline">
+            {t('back_to_list', '목록으로 돌아가기')}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
-      <div className="max-w-2xl w-full mx-auto text-center">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">{i18n.language === 'en' ? data.title_en : data.title_ko}</h1>
-        <div className="text-sm text-gray-500 mb-2">
-          {i18n.language === 'en' ? data.press_en : data.press_ko} | {data.date}
+      <div className="max-w-2xl w-full mx-auto">
+        {/* 뒤로가기 버튼 */}
+        <div className="mb-6">
+          <Link href="/press" className="text-gray-600 hover:text-gray-800 flex items-center">
+            <span className="mr-2">←</span>
+            {t('back_to_list', '목록으로 돌아가기')}
+          </Link>
         </div>
-        <div className="prose prose-sm md:prose-base mx-auto mb-6" dangerouslySetInnerHTML={{ __html: i18n.language === 'en' ? data.body_en : data.body_ko }} />
-        <a href={i18n.language === 'en' ? data.external_link_en : data.external_link_ko} target="_blank" rel="noopener noreferrer" className="inline-block bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition">
-          {t('go_to_original', '원본 기사 보기')}
-        </a>
+        
+        {/* 제목 및 메타 정보 */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold mb-4">{pressData.title}</h1>
+          <div className="text-sm text-gray-500 mb-4">
+            {pressData.press_name} | {new Date(pressData.published_date).toLocaleDateString()}
+          </div>
+        </div>
+        
+        {/* 본문 내용 */}
+        <div className="prose prose-sm md:prose-base mx-auto mb-8 max-w-none">
+          <div dangerouslySetInnerHTML={{ __html: pressData.body }} />
+        </div>
+        
+        {/* 외부 링크 버튼 */}
+        {pressData.external_link && (
+          <div className="text-center">
+            <a 
+              href={pressData.external_link} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-block bg-[#bda191] text-white px-6 py-3 rounded shadow hover:bg-[#a88b6a] transition"
+            >
+              {t('go_to_original', '원본 기사 보기')}
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

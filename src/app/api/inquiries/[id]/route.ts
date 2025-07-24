@@ -7,11 +7,12 @@ import Inquiry from '../../../../models/Inquiry';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const inquiry = await Inquiry.findById(params.id);
+    const resolvedParams = await params;
+    const inquiry = await Inquiry.findById(resolvedParams.id);
     
     if (!inquiry) {
       return NextResponse.json(
@@ -32,14 +33,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const resolvedParams = await params;
     const body = await request.json();
     
     const inquiry = await Inquiry.findByIdAndUpdate(
-      params.id,
+      resolvedParams.id,
       { ...body, responded_at: body.status === 'completed' ? new Date() : undefined },
       { new: true, runValidators: true }
     );
@@ -63,11 +65,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const inquiry = await Inquiry.findByIdAndDelete(params.id);
+    const resolvedParams = await params;
+    const inquiry = await Inquiry.findByIdAndDelete(resolvedParams.id);
     
     if (!inquiry) {
       return NextResponse.json(

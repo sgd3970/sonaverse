@@ -1,205 +1,187 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-const AdminDashboard: React.FC = () => {
-  const [lang, setLang] = useState<'ko' | 'en'>('ko');
+interface DashboardStats {
+  totalPress: number;
+  totalBlog: number;
+  totalInquiries: number;
+  totalProducts: number;
+}
 
-  const dashboardData = {
-    ko: {
-      title: '관리자 대시보드',
-      welcome: '안녕하세요! 관리자님',
-      stats: {
-        totalPages: '총 페이지',
-        totalProducts: '총 제품',
-        totalBlogPosts: '총 블로그 포스트',
-        totalPressReleases: '총 언론보도',
-        totalBrandStories: '총 브랜드 스토리',
-        newInquiries: '새로운 문의',
-        totalInquiries: '총 문의'
-      },
-      quickActions: {
-        title: '빠른 액션',
-        addPage: '새 페이지 추가',
-        addProduct: '새 제품 추가',
-        addBlogPost: '새 블로그 포스트 추가',
-        addPressRelease: '새 언론보도 추가',
-        addBrandStory: '새 브랜드 스토리 추가',
-        viewInquiries: '문의 내역 보기'
-      },
-      recentActivity: {
-        title: '최근 활동',
-        noActivity: '최근 활동이 없습니다.'
-      }
-    },
-    en: {
-      title: 'Admin Dashboard',
-      welcome: 'Hello, Administrator!',
-      stats: {
-        totalPages: 'Total Pages',
-        totalProducts: 'Total Products',
-        totalBlogPosts: 'Total Blog Posts',
-        totalPressReleases: 'Total Press Releases',
-        totalBrandStories: 'Total Brand Stories',
-        newInquiries: 'New Inquiries',
-        totalInquiries: 'Total Inquiries'
-      },
-      quickActions: {
-        title: 'Quick Actions',
-        addPage: 'Add New Page',
-        addProduct: 'Add New Product',
-        addBlogPost: 'Add New Blog Post',
-        addPressRelease: 'Add New Press Release',
-        addBrandStory: 'Add New Brand Story',
-        viewInquiries: 'View Inquiries'
-      },
-      recentActivity: {
-        title: 'Recent Activity',
-        noActivity: 'No recent activity.'
-      }
+const AdminDashboard: React.FC = () => {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalPress: 0,
+    totalBlog: 0,
+    totalInquiries: 0,
+    totalProducts: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      if (!token) return;
+
+      // 각 API에서 통계 데이터 가져오기
+      const [pressRes, blogRes, inquiriesRes, productsRes] = await Promise.all([
+        fetch('/api/press?active=false'),
+        fetch('/api/blog'),
+        fetch('/api/inquiries'),
+        fetch('/api/products')
+      ]);
+
+      const pressData = await pressRes.json();
+      const blogData = await blogRes.json();
+      const inquiriesData = await inquiriesRes.json();
+      const productsData = await productsRes.json();
+
+      setStats({
+        totalPress: pressData.total || 0,
+        totalBlog: blogData.total || 0,
+        totalInquiries: inquiriesData.total || 0,
+        totalProducts: productsData.total || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const t = dashboardData[lang];
+  const quickActions = [
+    {
+      title: '새 언론보도 등록',
+      description: '언론보도 자료를 새로 등록합니다',
+      href: '/admin/press/new',
+      icon: '📰',
+      color: 'bg-blue-500'
+    },
+    {
+      title: '새 블로그 작성',
+      description: '회사 블로그 글을 새로 작성합니다',
+      href: '/admin/blog/new',
+      icon: '📝',
+      color: 'bg-green-500'
+    },
+    {
+      title: '문의 내역 확인',
+      description: '새로운 문의 내역을 확인합니다',
+      href: '/admin/inquiries',
+      icon: '📧',
+      color: 'bg-yellow-500'
+    },
+    {
+      title: '사이트 설정',
+      description: '사이트 전역 설정을 관리합니다',
+      href: '/admin/settings',
+      icon: '⚙️',
+      color: 'bg-purple-500'
+    }
+  ];
 
-  // Mock data - 실제로는 API에서 가져올 데이터
-  const stats = {
-    pages: 5,
-    products: 2,
-    blogPosts: 12,
-    pressReleases: 8,
-    brandStories: 6,
-    newInquiries: 3,
-    totalInquiries: 25
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">통계를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
-          <p className="text-gray-600 mt-1">{t.welcome}</p>
-        </div>
-        <select
-          className="border rounded-lg px-3 py-2"
-          value={lang}
-          onChange={(e) => setLang(e.target.value as 'ko' | 'en')}
-        >
-          <option value="ko">한국어</option>
-          <option value="en">English</option>
-        </select>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
+        <p className="mt-2 text-gray-600">(주)소나버스 관리자 시스템에 오신 것을 환영합니다.</p>
       </div>
 
-      {/* Stats Grid */}
+      {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <span className="text-2xl">📄</span>
+              <span className="text-2xl">📰</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">{t.stats.totalPages}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pages}</p>
+              <p className="text-sm font-medium text-gray-600">언론보도</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalPress}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
-              <span className="text-2xl">🛍️</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">{t.stats.totalProducts}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.products}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
               <span className="text-2xl">📝</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">{t.stats.totalBlogPosts}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.blogPosts}</p>
+              <p className="text-sm font-medium text-gray-600">블로그</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalBlog}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
+            <div className="p-2 bg-yellow-100 rounded-lg">
               <span className="text-2xl">📧</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">{t.stats.newInquiries}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.newInquiries}</p>
+              <p className="text-sm font-medium text-gray-600">문의</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalInquiries}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <span className="text-2xl">🛍️</span>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">제품</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t.quickActions.title}</h2>
-          <div className="space-y-3">
+      {/* 빠른 액션 */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">빠른 액션</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickActions.map((action, index) => (
             <Link
-              href="/admin/pages/new"
-              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+              key={index}
+              href={action.href}
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
             >
-              <span className="text-lg">📄</span>
-              <span>{t.quickActions.addPage}</span>
+              <div className="flex items-center mb-3">
+                <div className={`p-2 rounded-lg ${action.color} text-white`}>
+                  <span className="text-xl">{action.icon}</span>
+                </div>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
+              <p className="text-sm text-gray-600">{action.description}</p>
             </Link>
-            <Link
-              href="/admin/products/new"
-              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-lg">🛍️</span>
-              <span>{t.quickActions.addProduct}</span>
-            </Link>
-            <Link
-              href="/admin/blog/new"
-              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-lg">📝</span>
-              <span>{t.quickActions.addBlogPost}</span>
-            </Link>
-            <Link
-              href="/admin/press/new"
-              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-lg">📰</span>
-              <span>{t.quickActions.addPressRelease}</span>
-            </Link>
-            <Link
-              href="/admin/brand-story/new"
-              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-lg">🏢</span>
-              <span>{t.quickActions.addBrandStory}</span>
-            </Link>
-            <Link
-              href="/admin/inquiries"
-              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-lg">📧</span>
-              <span>{t.quickActions.viewInquiries}</span>
-            </Link>
-          </div>
+          ))}
         </div>
+      </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t.recentActivity.title}</h2>
-          <div className="text-gray-500 text-center py-8">
-            <span className="text-4xl">📊</span>
-            <p className="mt-2">{t.recentActivity.noActivity}</p>
+      {/* 최근 활동 */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">최근 활동</h2>
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6">
+            <p className="text-gray-600">최근 활동 내역이 여기에 표시됩니다.</p>
           </div>
         </div>
       </div>

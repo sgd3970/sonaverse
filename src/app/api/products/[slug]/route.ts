@@ -7,11 +7,12 @@ import Product from '../../../../models/Product';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     await dbConnect();
-    const product = await Product.findById(params.id);
+    const resolvedParams = await params;
+    const product = await Product.findOne({ slug: resolvedParams.slug });
     
     if (!product) {
       return NextResponse.json(
@@ -32,14 +33,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     await dbConnect();
+    const resolvedParams = await params;
     const body = await request.json();
     
-    const product = await Product.findByIdAndUpdate(
-      params.id,
+    const product = await Product.findOneAndUpdate(
+      { slug: resolvedParams.slug },
       { ...body, updated_at: new Date() },
       { new: true, runValidators: true }
     );
@@ -63,11 +65,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     await dbConnect();
-    const product = await Product.findByIdAndDelete(params.id);
+    const resolvedParams = await params;
+    const product = await Product.findOneAndDelete({ slug: resolvedParams.slug });
     
     if (!product) {
       return NextResponse.json(

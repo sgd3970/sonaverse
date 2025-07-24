@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 /**
  * Inquiry Document (inquiries 컬렉션)
- * - 기업/대량 문의 폼 데이터
+ * - 기업 문의 폼 데이터
  * - 카테고리, 이름, 회사명, 연락처, 이메일, 메시지, 첨부파일, 상태, 관리자 메모, 답변 정보
  */
 export interface IInquiry extends Document {

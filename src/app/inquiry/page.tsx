@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../../app/i18n';
@@ -32,7 +34,7 @@ const InquiryPage: React.FC = () => {
   return (
     <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
       <div className="max-w-xl w-full">
-        <h1 className="text-3xl md:text-4xl font-bold mb-8">{t('inquiry', '기업/대량 문의')}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-8">{t('inquiry', '기업 문의')}</h1>
         <form className="flex flex-col gap-4">
           <label className="flex flex-col gap-1">
             {t('inquiry_category', '문의 카테고리')}
