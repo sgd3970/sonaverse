@@ -12,13 +12,13 @@ interface BlogPost {
   content: {
     ko?: {
       title: string;
-      summary: string;
+      subtitle: string;
       body: string;
       thumbnail_url: string;
     };
     en?: {
       title: string;
-      summary: string;
+      subtitle: string;
       body: string;
       thumbnail_url: string;
     };
@@ -159,7 +159,7 @@ const BlogDetailPage: React.FC = () => {
 
             {/* 부제목 */}
             <p className="text-xl text-gray-600 mb-6">
-              {content.summary}
+              {content.subtitle}
             </p>
 
             {/* 메타 정보 */}
