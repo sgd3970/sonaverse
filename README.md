@@ -71,13 +71,17 @@ sonaverse-homepage/
    ```
 
 3. **환경 변수 설정**
-   ```bash
-   cp .env.example .env.local
-   ```
    
-   `.env.local` 파일에 다음 내용을 추가:
+   `.env.local` 파일을 생성하고 다음 내용을 추가:
    ```env
-   MONGODB_URI=your_mongodb_connection_string
+   # MongoDB 연결
+   MONGODB_URI=mongodb+srv://admin:kACXwyLodJiLE3Ka@sonaverse.e0zqfop.mongodb.net/?retryWrites=true&w=majority&appName=Sonaverse
+   
+   # JWT 시크릿 키 (실제 배포 시 변경 필요)
+   JWT_SECRET=sonaverse-super-secret-jwt-key-2025
+   
+   # 관리자 이메일
+   ADMIN_EMAIL=admin@sonaverse.com
    ```
 
 4. **개발 서버 실행**

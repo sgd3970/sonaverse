@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,18 +29,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 임시로 로컬 URL 반환 (실제 배포 시에는 Vercel Blob 사용)
+    // Vercel Blob에 업로드
     const timestamp = Date.now();
     const fileName = `${timestamp}-${file.name}`;
     
-    // 실제 구현에서는 Vercel Blob을 사용해야 함
-    // const blob = await put(fileName, file, { access: 'public' });
-    
-    // 임시 URL (실제로는 blob.url을 사용)
-    const tempUrl = `/uploads/${fileName}`;
+    const blob = await put(fileName, file, { access: 'public' });
 
     return NextResponse.json({
-      url: tempUrl,
+      url: blob.url,
       success: true
     });
 
