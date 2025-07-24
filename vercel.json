@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "env": {
-    "MONGODB_URI": "@mongodb_uri"
-  },
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
