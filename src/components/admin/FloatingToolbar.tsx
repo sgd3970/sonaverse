@@ -228,7 +228,6 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
           <div className="flex gap-0.5 mb-0.5">
             <button onClick={handleAddLink} className={`px-1 py-0.5 rounded text-xs ${editor.isActive('link') ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`} title="링크">🔗</button>
             <button onClick={onImageUpload} className="px-1 py-0.5 rounded text-xs bg-green-100 hover:bg-green-200" title="이미지">🖼️</button>
-            <button onClick={() => editor.chain().focus().insertDivider().run()} className="px-1 py-0.5 rounded text-xs bg-orange-100 hover:bg-orange-200" title="구분선">➖</button>
             <button onClick={() => editor.chain().focus().insertClearBreak().run()} className="px-1 py-0.5 rounded text-xs bg-purple-100 hover:bg-purple-200" title="줄바꿈">↩️</button>
             <button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="px-1 py-0.5 rounded text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50" title="실행 취소">↩️</button>
             <button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="px-1 py-0.5 rounded text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50" title="재실행">↪️</button>
