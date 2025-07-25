@@ -93,7 +93,7 @@ const ImageComponent = ({ node, updateAttributes, deleteNode, extension }: any) 
   // 외부 클릭 시 컨트롤 패널 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(event.target as globalThis.Node)) {
         setShowControls(false);
       }
     };
