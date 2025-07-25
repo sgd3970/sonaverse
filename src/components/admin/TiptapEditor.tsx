@@ -452,8 +452,6 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
       EnhancedImage.configure({ 
         inline: false, 
         allowBase64: false,
-        updateImageMetadata,
-        removeImageMetadata,
       }),
       TextAlign.configure({ 
         types: ['heading', 'paragraph'] 
