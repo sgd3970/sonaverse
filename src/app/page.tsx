@@ -898,7 +898,7 @@ const HomePage: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl">
                 <h4 className="text-2xl font-bold mb-6 text-purple-800">{lang === 'ko' ? '비즈니스 모델' : 'Business Model'}</h4>
                 <div className="text-gray-600 mb-6">
-                  {bodeum.business.split(/<br\s*\/?>|\n/).map((line, i, arr) => (
+                  {bodeum.business.split(/<br\s*\/?>|\n/).map((line: string, i: number, arr: string[]) => (
                     <React.Fragment key={i}>
                       {line}
                       {i < arr.length - 1 && <br />}
@@ -998,12 +998,12 @@ const HomePage: React.FC = () => {
                     <span className="text-orange-300 text-sm font-semibold block mb-3">{advisor.role}</span>
                     <div className="text-gray-400 text-sm mb-2">
                       <ul className="list-disc pl-5 text-gray-400 text-sm text-left">
-                        {advisor.background.split(',').map((item, i) => <li key={i}>{item.trim()}</li>)}
+                        {advisor.background.split(',').map((item: any, i: any) => <li key={i}>{item.trim()}</li>)}
                       </ul>
                     </div>
                     <div className="text-gray-400 text-xs">
                       <ul className="list-disc pl-5 text-gray-400 text-xs text-left">
-                        {advisor.specialty.split(',').map((item, i) => <li key={i}>{item.trim()}</li>)}
+                        {advisor.specialty.split(',').map((item: any, i: any) => <li key={i}>{item.trim()}</li>)}
                       </ul>
                     </div>
                   </div>
@@ -1041,7 +1041,7 @@ const HomePage: React.FC = () => {
             <div className="absolute left-8 md:left-1/2 transform md:-translate-x-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-slate-600 to-orange-600 rounded-full"></div>
             
             <div className="space-y-16">
-              {history.map((item, idx) => (
+              {history.map((item: any, idx: any) => (
                 <div 
                   key={idx} 
                   className={`relative transform transition-all duration-1000 delay-${idx * 200} ${isVisible.history ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
@@ -1058,7 +1058,7 @@ const HomePage: React.FC = () => {
                         <h4 className="text-xl font-bold mb-3 text-slate-800">{item.title}</h4>
                         <p className="text-gray-600 mb-6">{item.description}</p>
                         <ul className="space-y-2">
-                          {item.events.map((event, eventIdx) => (
+                          {item.events.map((event: any, eventIdx: any) => (
                             <li key={eventIdx} className="flex items-start text-gray-700">
                               <span className="w-2 h-2 bg-orange-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                               <span className="text-sm">{event}</span>
@@ -1157,7 +1157,7 @@ const HomePage: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl h-full">
                 <h3 className="text-2xl font-bold mb-4 text-slate-800">{business.b2b.title}</h3>
                 <div className="text-gray-600 mb-6">
-                  {business.b2b.description.split(/<br\s*\/?>|\n/).map((line, i, arr) => (
+                  {business.b2b.description.split(/<br\s*\/?>|\n/).map((line: string, i: number, arr: string[]) => (
                     <React.Fragment key={i}>
                       {line}
                       {i < arr.length - 1 && <br />}
@@ -1165,7 +1165,7 @@ const HomePage: React.FC = () => {
                   ))}
                 </div>
                 <ul className="space-y-3">
-                  {business.b2b.advantages.map((advantage, idx) => (
+                  {business.b2b.advantages.map((advantage: any, idx: number) => (
                     <li key={idx} className="flex items-start text-gray-700">
                       <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                       <span className="text-sm">{advantage}</span>
@@ -1180,7 +1180,7 @@ const HomePage: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl h-full">
                 <h3 className="text-2xl font-bold mb-4 text-slate-800">{business.b2c.title}</h3>
                 <div className="text-gray-600 mb-6">
-                  {business.b2c.description.split(/<br\s*\/?>|\n/).map((line, i, arr) => (
+                  {business.b2c.description.split(/<br\s*\/?>|\n/).map((line: string, i: number, arr: string[]) => (
                     <React.Fragment key={i}>
                       {line}
                       {i < arr.length - 1 && <br />}
@@ -1188,7 +1188,7 @@ const HomePage: React.FC = () => {
                   ))}
                 </div>
                 <ul className="space-y-3">
-                  {business.b2c.advantages.map((advantage, idx) => (
+                  {business.b2c.advantages.map((advantage: any, idx: number) => (
                     <li key={idx} className="flex items-start text-gray-700">
                       <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                       <span className="text-sm">{advantage}</span>
