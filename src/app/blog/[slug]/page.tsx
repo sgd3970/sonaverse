@@ -88,12 +88,12 @@ const BlogDetailPage: React.FC = () => {
   const content = blogPost?.content[i18n.language as keyof typeof blogPost.content] || blogPost?.content.ko || blogPost?.content.en || { body: '' };
   const [bodyWithImageMeta, setBodyWithImageMeta] = useState(content.body);
   useEffect(() => {
-    if (content.body && content.images) {
-      setBodyWithImageMeta(applyImageMetadataToBody(content.body, content.images));
+    if (content.body && 'images' in content && Array.isArray((content as any).images)) {
+      setBodyWithImageMeta(applyImageMetadataToBody(content.body, (content as any).images));
     } else {
       setBodyWithImageMeta(content.body || '');
     }
-  }, [content.body, content.images]);
+  }, [content.body, (content as any).images]);
 
   useEffect(() => {
     if (slug) {
@@ -192,11 +192,11 @@ const BlogDetailPage: React.FC = () => {
         {/* 헤더 */}
         <article>
           {/* 썸네일 이미지 */}
-          {content.thumbnail_url && (
+          {'thumbnail_url' in content && content.thumbnail_url && (
             <div className="w-full h-64 md:h-96 bg-gray-200 flex items-center justify-center">
               <img
                 src={content.thumbnail_url}
-                alt={content.title ?? ''}
+                alt={'title' in content ? content.title : ''}
                 className="object-contain object-center max-w-full h-auto"
                 style={{ maxHeight: '100%' }}
               />
@@ -206,14 +206,18 @@ const BlogDetailPage: React.FC = () => {
           {/* 콘텐츠 */}
           <div className="p-8">
             {/* 제목 */}
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {content.title}
-            </h1>
+            {'title' in content && (
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                {content.title}
+              </h1>
+            )}
 
             {/* 부제목 */}
-            <p className="text-xl text-gray-600 mb-6">
-              {content.subtitle}
-            </p>
+            {'subtitle' in content && (
+              <p className="text-xl text-gray-600 mb-6">
+                {content.subtitle}
+              </p>
+            )}
 
             {/* 메타 정보 */}
             <div className="flex items-center justify-between text-sm text-gray-500 mb-8 pb-6 border-b border-gray-200">
