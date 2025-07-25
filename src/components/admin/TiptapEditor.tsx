@@ -84,37 +84,6 @@ const ClearBreak = Node.create({
   },
 });
 
-// Divider 노드 정의 (문단 구분선)
-const Divider = Node.create({
-  name: 'divider',
-  
-  group: 'block',
-  
-  atom: true,
-  
-  parseHTML() {
-    return [
-      { tag: 'hr[data-divider]' },
-    ]
-  },
-  
-  renderHTML({ HTMLAttributes }) {
-    return ['hr', { 
-      ...HTMLAttributes, 
-      'data-divider': '',
-      style: 'border: none; border-top: 2px solid #e5e7eb; margin: 24px 0; cursor: pointer;' 
-    }]
-  },
-  
-  addCommands() {
-    return {
-      insertDivider: () => ({ commands }) => {
-        return commands.insertContent({ type: this.name })
-      },
-    }
-  },
-});
-
 
 // 이미지 컴포넌트
 const ImageComponent = ({ node, updateAttributes, deleteNode, extension }: any) => {
@@ -490,7 +459,6 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
         types: ['heading', 'paragraph'] 
       }),
       ClearBreak,
-      Divider,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -808,18 +776,6 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
           background: rgba(59, 130, 246, 0.1);
           border: 1px dashed rgba(59, 130, 246, 0.3);
           height: 8px;
-        }
-        
-        /* Divider 스타일 */
-        .ProseMirror [data-divider] {
-          border: none !important;
-          border-top: 2px solid #e5e7eb !important;
-          margin: 24px 0 !important;
-          cursor: pointer;
-        }
-        
-        .ProseMirror [data-divider]:hover {
-          border-top-color: #9ca3af !important;
         }
         
         /* HTML span 태그 스타일 지원 */
