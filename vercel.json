@@ -37,13 +37,6 @@
       ]
     }
   ],
-  "redirects": [
-    {
-      "source": "/admin",
-      "destination": "/admin/",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/uploads/(.*)",
