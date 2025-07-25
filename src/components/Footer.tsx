@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -14,6 +14,16 @@ import { useLanguage } from '../contexts/LanguageContext';
 const Footer: React.FC = () => {
   const { t } = useLanguage();
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const openPrivacyModal = () => setIsPrivacyModalOpen(true);
   const closePrivacyModal = () => setIsPrivacyModalOpen(false);
@@ -33,16 +43,22 @@ const Footer: React.FC = () => {
               <div><span className="font-bold">{t('company_name_label', '상호명')}:</span> {t('company_name', '(주)소나버스')}</div>
               <div><span className="font-bold">{t('representative_label', '대표자명')}:</span> {t('representative', '이수진')}</div>
               <div><span className="font-bold">{t('address_label', '사업장 주소')}:</span> {t('address', '(24232) 강원특별자치도 춘천시 후석로462번길 7 춘천ICT벤처센터 319호')}</div>
-              <div><span className="font-bold">{t('main_phone_label', '대표 전화')}:</span> {t('main_phone', '010-5703-8899')}</div>
+              <div><span className="font-bold">{t('main_phone_label', '대표 전화')}:</span> {isMobile ? (
+                <a href="tel:010-5703-8899" className="hover:text-[#bda191] transition-colors cursor-pointer">010-5703-8899</a>
+              ) : (
+                '010-5703-8899'
+              )}</div>
               <div><span className="font-bold">{t('business_registration_number_label', '사업자등록번호')}:</span> {t('business_registration_number', '697-87-02555')}</div>
               <div><span className="font-bold">{t('e_commerce_registration_number_label', '통신판매업 신고 번호')}:</span> {t('e_commerce_registration_number', '2023-강원춘천-0688')}</div>
                 {/* 개인정보처리방침 */}
-              <button 
+              <a
+                href="#"
                 onClick={openPrivacyModal}
-                className="text-sm text-gray-600 hover:text-blue-600 transition-colors underline text-left"
+                className="font-bold cursor-pointer transition-colors hover:text-[#bda191]"
+                style={{ textDecoration: 'none' }}
               >
                 {t('privacy_policy', '개인정보처리방침')}
-              </button>
+              </a>
             </div>
           </div>
 
@@ -73,12 +89,16 @@ const Footer: React.FC = () => {
             </div>
             {/* 고객센터 정보 */}
             <div className="text-sm text-gray-600 space-y-1 mb-6">
-              <div><span className="font-bold">{t('customer_service_label', '고객센터')}</span></div>
-              <div>{t('cs_phone', '010-5703-8899')}</div>
-              <div><span className="font-bold">{t('email_label', '이메일')}</span></div>
-              <div>{t('cs_email', 'shop@sonaverse.kr')}</div>
-              <div><span className="font-bold">{t('operating_hours_label', '운영시간')}</span></div>
-              <div>{t('cs_hours', '평일 09:30 ~ 18:30')}</div>
+              <div className="font-bold mb-1">{t('customer_service_label', '고객센터')}</div>
+              {isMobile ? (
+                <a href="tel:010-5703-8899" className="hover:text-[#bda191] transition-colors cursor-pointer mb-1 block">010-5703-8899</a>
+              ) : (
+                <div className="mb-1">010-5703-8899</div>
+              )}
+              <div className="font-bold mb-1">{t('email_label', '이메일')}</div>
+              <a href="mailto:shop@sonaverse.kr" className="hover:text-[#bda191] transition-colors cursor-pointer mb-1 block">shop@sonaverse.kr</a>
+              <div className="font-bold mb-1">{t('operating_hours_label', '운영시간')}</div>
+              <div className="mb-1">{t('cs_hours', '평일 09:30 ~ 18:30')}</div>
               <div>{t('closed_on_weekends', '(주말·공휴일 휴무)')}</div>
             </div>
             {/* SNS 로고들 */}

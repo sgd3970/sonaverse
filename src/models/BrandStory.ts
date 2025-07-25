@@ -3,12 +3,12 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 /**
  * BrandStory Document (brand_stories 컬렉션)
  * - 브랜드 스토리 콘텐츠
- * - 다국어 지원, 요약, 본문(HTML), 썸네일, 작성자, 추천 스토리, 작성/수정일, 공개 여부
+ * - 다국어 지원, 요약, 본문(HTML, YouTube iframe 등 임베디드 미디어 포함), 썸네일, 작성자, 추천 스토리, 작성/수정일, 공개 여부
  */
 export interface IBrandStoryContent {
   title: string;
   subtitle: string;
-  body: string;
+  body: string; // HTML(iframe, img 등 임베디드 미디어 포함 가능)
   thumbnail_url: string;
 }
 

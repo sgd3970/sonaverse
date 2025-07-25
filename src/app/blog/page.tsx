@@ -108,25 +108,37 @@ const BlogPage: React.FC = () => {
   const visiblePosts = blogPosts.slice(0, visibleCount);
   const hasMore = visibleCount < blogPosts.length;
 
+  if (blogPosts && blogPosts.length > 0) {
+    console.log('[블로그 목록] 렌더링 posts:', blogPosts);
+    visiblePosts.forEach((post, idx) => {
+      const content = post.content[i18n.language as keyof typeof post.content] || post.content.ko || post.content.en;
+      console.log(`[블로그 목록] 카드 #${idx} content:`, content);
+    });
+  }
+
   return (
-    <div className="min-h-screen bg-[#f8f6f2] w-full py-8">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 헤더 */}
-        <div className="text-center mb-8">
-          <h1 className="font-bold text-gray-900" style={{ fontSize: 'clamp(1.2rem, 3vw, 2.2rem)' }}>
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
             {t('blog', '블로그')}
           </h1>
+          <p className="text-lg text-gray-600">소나버스의 인사이트를 만나보세요</p>
         </div>
 
         {/* 블로그 포스트 그리드 */}
         {visiblePosts.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500" style={{ fontSize: 'clamp(0.9rem, 2vw, 1.1rem)' }}>
-              {t('no_results', '검색 결과가 없습니다.')}
-            </p>
+          <div className="text-center py-20">
+            <div className="bg-white rounded-2xl p-12 shadow-lg border border-gray-200">
+              <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              <p className="text-gray-500 text-lg">{t('no_results', '검색 결과가 없습니다.')}</p>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
             {visiblePosts.map((post) => {
               const content = post.content[i18n.language as keyof typeof post.content] || post.content.ko || post.content.en;
               if (!content) return null;
@@ -134,36 +146,37 @@ const BlogPage: React.FC = () => {
                 <Link
                   key={post._id}
                   href={`/blog/${post.slug}`}
-                  className="bg-[#f8f6f2] rounded-lg overflow-hidden flex flex-col"
-                  style={{ minWidth: 220 }}
+                  className="group bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 flex flex-col h-full"
                 >
                   {/* 이미지 */}
-                  <div className="aspect-[5/3] w-full bg-gray-200">
+                  <div className="aspect-[5/3] w-full bg-gray-200 overflow-hidden flex-shrink-0">
                     <img
                       src={content.thumbnail_url || '/logo/nonImage_logo.png'}
                       alt={content.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={e => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
                     />
                   </div>
+                  
                   {/* 본문 */}
-                  <div className="p-4 flex flex-col flex-1">
-                    <h2
-                      className="font-bold text-gray-900 truncate"
-                      style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)' }}
-                    >
+                  <div className="p-6 flex flex-col flex-1">
+                    {/* 제목 */}
+                    <h2 className="text-xl font-bold text-slate-800 mb-3 line-clamp-2 group-hover:text-slate-600 transition-colors min-h-[3.5rem]">
                       {content.title}
                     </h2>
-                    <p
-                      className="text-gray-700 truncate"
-                      style={{ fontSize: 'clamp(0.9rem, 1.2vw, 1.1rem)' }}
-                    >
+                    
+                    {/* 부제목 */}
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow min-h-[2.5rem]">
                       {content.subtitle}
                     </p>
-                    <div className="flex items-center text-gray-500 mt-auto pt-2" style={{ fontSize: 'clamp(0.8rem, 1vw, 1rem)' }}>
-                      <span>{formatDate(post.created_at)}</span>
-                      <span className="mx-2">|</span>
-                      <span>{i18n.language === 'en' ? 'Sonaverse Co., Ltd.' : '(주) 소나버스'}</span>
+                    
+                    {/* 하단 정보 */}
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-100 mt-auto">
+                      <div className="flex items-center text-xs text-gray-500">
+                        <span>{formatDate(post.created_at)}</span>
+                        <span className="mx-2">•</span>
+                        <span>{i18n.language === 'en' ? 'Sonaverse' : '소나버스'}</span>
+                      </div>
                     </div>
                   </div>
                 </Link>
@@ -174,16 +187,34 @@ const BlogPage: React.FC = () => {
 
         {/* 더 알아보기 버튼 */}
         {hasMore && (
-          <div className="flex justify-center mt-12 mb-0">
+          <div className="flex justify-center mt-16">
             <button
               onClick={() => setVisibleCount((prev) => prev + 6)}
-              className="rounded-lg font-semibold transition-colors px-8 py-3"
-              style={{ backgroundColor: '#f0ece9', color: '#22223b', fontSize: 'clamp(0.95rem, 1.5vw, 1.1rem)' }}
+              className="inline-flex items-center px-8 py-4 text-base font-semibold bg-slate-800 text-white rounded-full hover:bg-slate-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               {t('load_more', '더 알아보기')}
+              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
             </button>
           </div>
         )}
+        
+        {/* 검색 기능 추가 */}
+        <div className="flex justify-center mt-16">
+          <div className="w-full max-w-md relative">
+            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="블로그 포스트 검색..."
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 outline-none transition-all bg-white"
+            />
+          </div>
+        </div>
       </div>
       <style jsx global>{`
         img.default-symbol {

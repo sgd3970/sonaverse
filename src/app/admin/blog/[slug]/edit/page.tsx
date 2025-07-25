@@ -9,8 +9,8 @@ import type { TiptapEditorRef } from '@/components/admin/TiptapEditor';
 interface BlogFormData {
   slug: string;
   content: {
-    ko: { title: string; subtitle: string; body: string; thumbnail_url: string };
-    en: { title: string; subtitle: string; body: string; thumbnail_url: string };
+    ko: { title: string; subtitle: string; body: string; thumbnail_url: string; images: any[] };
+    en: { title: string; subtitle: string; body: string; thumbnail_url: string; images: any[] };
   };
   tags: string;
   is_published: boolean;
@@ -37,12 +37,17 @@ const EditBlogPage: React.FC = () => {
 
   const fetchBlogPost = async () => {
     try {
-      const response = await fetch(`/api/blog/${slug}`);
-      if (!response.ok) {
-        throw new Error('블로그 포스트를 불러올 수 없습니다.');
+      setLoading(true);
+      const res = await fetch(`/api/blog/${slug}`);
+      console.log('[수정 상세] API 응답 status:', res.status);
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error('블로그 포스트를 찾을 수 없습니다.');
+        }
+        throw new Error('블로그 포스트를 불러오는데 실패했습니다.');
       }
-      
-      const data = await response.json();
+      const data = await res.json();
+      console.log('[수정 상세] API 데이터:', data);
       setFormData({
         slug: data.slug,
         content: {
@@ -50,13 +55,15 @@ const EditBlogPage: React.FC = () => {
             title: data.content.ko?.title || '',
             subtitle: data.content.ko?.subtitle || '',
             body: data.content.ko?.body || '',
-            thumbnail_url: data.content.ko?.thumbnail_url || ''
+            thumbnail_url: data.content.ko?.thumbnail_url || '',
+            images: data.content.ko?.images || []
           },
           en: {
             title: data.content.en?.title || '',
             subtitle: data.content.en?.subtitle || '',
             body: data.content.en?.body || '',
-            thumbnail_url: data.content.en?.thumbnail_url || ''
+            thumbnail_url: data.content.en?.thumbnail_url || '',
+            images: data.content.en?.images || []
           }
         },
         tags: (data.tags || []).join(', '),
@@ -67,9 +74,11 @@ const EditBlogPage: React.FC = () => {
       if (data.content.ko?.thumbnail_url) {
         setThumbnailPreview(data.content.ko.thumbnail_url);
       }
-    } catch (error) {
-      console.error('블로그 포스트 로딩 오류:', error);
+    } catch (err) {
+      console.error('[수정 상세] fetchBlogPost 에러:', err);
       alert('블로그 포스트를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,6 +99,21 @@ const EditBlogPage: React.FC = () => {
         [lang]: {
           ...prev.content[lang as keyof typeof prev.content],
           [field]: value
+        }
+      }
+    }) : null);
+  };
+
+  // 이미지 메타데이터 변경 핸들러
+  const handleImagesChange = (lang: string, images: any[]) => {
+    if (!formData) return;
+    setFormData(prev => prev ? ({
+      ...prev,
+      content: {
+        ...prev.content,
+        [lang]: {
+          ...prev.content[lang as keyof typeof prev.content],
+          images
         }
       }
     }) : null);
@@ -174,15 +198,18 @@ const EditBlogPage: React.FC = () => {
     }
 
     setLoading(true);
+    console.log('[블로그 수정] 제출 formData:', formData);
     
     try {
-      let thumbnailUrl = formData.content.ko.thumbnail_url; // 기존 썸네일 URL 유지
+      let thumbnailUrl = formData.content.ko.thumbnail_url || '';
 
       // 새 썸네일이 있는 경우 업로드
       if (thumbnailFile) {
         try {
           thumbnailUrl = await uploadThumbnail(thumbnailFile, formData.slug);
+          console.log('[썸네일 업로드 성공] URL:', thumbnailUrl);
         } catch (error) {
+          console.error('[썸네일 업로드 실패]', error);
           alert('썸네일 업로드에 실패했습니다.');
           setLoading(false);
           return;
@@ -196,58 +223,61 @@ const EditBlogPage: React.FC = () => {
       if (koEditorRef.current) {
         try {
           updatedKoBody = await koEditorRef.current.uploadTempImagesToBlob(formData.slug);
+          console.log('[한국어 본문 이미지 업로드 후 HTML]', updatedKoBody);
         } catch (error) {
-          console.error('한국어 에디터 이미지 업로드 실패:', error);
+          console.error('[한국어 에디터 이미지 업로드 실패]:', error);
         }
       }
 
       if (enEditorRef.current) {
         try {
           updatedEnBody = await enEditorRef.current.uploadTempImagesToBlob(formData.slug);
+          console.log('[영어 본문 이미지 업로드 후 HTML]', updatedEnBody);
         } catch (error) {
-          console.error('영어 에디터 이미지 업로드 실패:', error);
+          console.error('[영어 에디터 이미지 업로드 실패]:', error);
         }
       }
 
-      const tagsArray = parseTagsToArray(formData.tags);
-      
-      const submitData = {
+      const payload = {
         ...formData,
+        thumbnail_url: thumbnailUrl,
         content: {
-          ko: { 
-            ...formData.content.ko, 
+          ko: {
+            ...formData.content.ko,
             body: updatedKoBody,
-            thumbnail_url: thumbnailUrl
           },
-          en: { 
-            ...formData.content.en, 
+          en: {
+            ...formData.content.en,
             body: updatedEnBody,
-            thumbnail_url: thumbnailUrl
           }
-        },
-        tags: tagsArray
+        }
       };
+      console.log('[최종 DB 전송 payload]', payload);
 
-      const response = await fetch(`/api/blog/${slug}`, {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/blog/${formData.slug}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(submitData)
+        body: JSON.stringify(payload),
       });
+      const result = await response.json();
+      console.log('[블로그 수정 API 응답]', result);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '블로그 포스트 수정에 실패했습니다.');
+        alert(result.error || '블로그 수정에 실패했습니다.');
+        setLoading(false);
+        return;
       }
 
-      alert('블로그 포스트가 성공적으로 수정되었습니다.');
-      router.push('/admin/blog');
+      alert('블로그가 성공적으로 수정되었습니다!');
+      window.location.href = '/admin/blog';
       
     } catch (error) {
-      console.error('블로그 포스트 수정 오류:', error);
-      alert(error instanceof Error ? error.message : '블로그 포스트 수정에 실패했습니다.');
+      console.error('[블로그 수정 전체 에러]', error);
+      alert('블로그 수정 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -256,8 +286,8 @@ const EditBlogPage: React.FC = () => {
   // 로딩 중이거나 데이터가 없으면 로딩 표시
   if (!formData) {
     return (
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="bg-gray-50 p-6">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center py-8">
             <div className="text-lg text-gray-600">블로그 포스트를 불러오는 중...</div>
           </div>
@@ -267,8 +297,8 @@ const EditBlogPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="bg-gray-50 p-6">
+      <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">블로그 포스트 수정</h1>
           <Link 
@@ -399,6 +429,8 @@ const EditBlogPage: React.FC = () => {
                   onChange={(value) => handleContentChange('ko', 'body', value)}
                   slug={formData.slug}
                   placeholder="한국어 본문을 입력하세요..."
+                  images={formData.content.ko.images}
+                  onImagesChange={(images) => handleImagesChange('ko', images)}
                 />
               </div>
             </div>
@@ -440,6 +472,8 @@ const EditBlogPage: React.FC = () => {
                   onChange={(value) => handleContentChange('en', 'body', value)}
                   slug={formData.slug}
                   placeholder="영어 본문을 입력하세요..."
+                  images={formData.content.en.images}
+                  onImagesChange={(images) => handleImagesChange('en', images)}
                 />
               </div>
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 /**
@@ -13,11 +13,24 @@ const Header: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const logoSrc = language === 'en' ? '/logo/en_logo.png' : '/logo/ko_logo.png';
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  // 바깥 클릭 시 드롭다운 닫힘
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isDropdownOpen]);
 
   return (
     <header className="w-full sticky top-0 z-50 relative" style={{ backgroundColor: '#f0ece9' }}>
@@ -32,12 +45,14 @@ const Header: React.FC = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-8 items-center text-base font-medium tracking-wide">
           <a href="/" className="nav-link">{t('home', '홈')}</a>
-          <div
-            className="relative"
-            onMouseEnter={() => setIsDropdownOpen(true)}
-            onMouseLeave={() => setIsDropdownOpen(false)}
-          >
-            <button className="nav-link focus:outline-none">
+          <div className="relative" ref={dropdownRef}>
+            <button
+              className="nav-link focus:outline-none"
+              onClick={() => setIsDropdownOpen((open) => !open)}
+              aria-expanded={isDropdownOpen}
+              aria-haspopup="true"
+              type="button"
+            >
               {t('products', '제품소개')}
             </button>
             <div className={`absolute left-1/2 -translate-x-1/2 mt-3 flex gap-4 bg-white/90 backdrop-blur-md border border-[#e5e0db] rounded-2xl shadow-2xl px-4 py-4 min-w-[380px] z-50 transition-all duration-200 ${isDropdownOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
@@ -65,10 +80,6 @@ const Header: React.FC = () => {
             <option value="ko">한국어</option>
             <option value="en">English</option>
           </select>
-          {/* Search Icon */}
-          <button className="ml-2 p-2 rounded-lg hover:bg-[#e5e0db] hover:text-[#bda191] transition-colors duration-200 shadow-sm">
-            🔍
-          </button>
         </nav>
         
         {/* Mobile Hamburger */}
@@ -108,9 +119,6 @@ const Header: React.FC = () => {
                 <option value="ko">한국어</option>
                 <option value="en">English</option>
               </select>
-              <button className="p-2 hover:bg-gray-100 rounded transition-colors">
-                🔍
-              </button>
             </div>
           </nav>
         </div>

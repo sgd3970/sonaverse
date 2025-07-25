@@ -1,12 +1,29 @@
 'use client';
 
-import React, { useCallback, useState, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useCallback, useState, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { EditorContent, useEditor, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import FontSize from './FontSize';
+import { Node, Extension } from '@tiptap/core';
+// import BulletList from '@tiptap/extension-bullet-list';
+// import OrderedList from '@tiptap/extension-ordered-list';
+// import ListItem from '@tiptap/extension-list-item';
+
+interface IBlogPostImage {
+  src: string;
+  alt: string;
+  alignment: 'left' | 'center' | 'right' | 'full';
+  displaysize: number;
+  originalWidth: number;
+  originalHeight: number;
+  uploadAt: Date;
+}
 
 interface TiptapEditorProps {
   value: string;
@@ -14,10 +31,23 @@ interface TiptapEditorProps {
   placeholder?: string;
   className?: string;
   slug?: string;
+  images?: IBlogPostImage[];
+  onImagesChange?: (images: IBlogPostImage[]) => void;
+  onEditorFocus?: (editor: any) => void;
+}
+
+// ClearBreak 명령어 타입 확장
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    clearBreak: {
+      insertClearBreak: () => ReturnType
+    }
+  }
 }
 
 export interface TiptapEditorRef {
   uploadTempImagesToBlob: (slug?: string) => Promise<string>;
+  getImages: () => IBlogPostImage[];
 }
 
 // 임시 이미지를 blob URL로 생성하는 함수
@@ -25,9 +55,87 @@ const createTempImageUrl = (file: File): string => {
   return URL.createObjectURL(file);
 };
 
+// Clear Break 노드 정의 (float 해제용)
+const ClearBreak = Node.create({
+  name: 'clearBreak',
+  
+  group: 'block',
+  
+  parseHTML() {
+    return [
+      { tag: 'div[data-clear-break]' },
+    ]
+  },
+  
+  renderHTML({ HTMLAttributes }) {
+    return ['div', { 
+      ...HTMLAttributes, 
+      'data-clear-break': '',
+      style: 'clear: both; height: 1px; margin: 8px 0;' 
+    }]
+  },
+  
+  addCommands() {
+    return {
+      insertClearBreak: () => ({ commands }) => {
+        return commands.insertContent({ type: this.name })
+      },
+    }
+  },
+});
+
+// Divider 노드 정의 (문단 구분선)
+const Divider = Node.create({
+  name: 'divider',
+  
+  group: 'block',
+  
+  atom: true,
+  
+  parseHTML() {
+    return [
+      { tag: 'hr[data-divider]' },
+    ]
+  },
+  
+  renderHTML({ HTMLAttributes }) {
+    return ['hr', { 
+      ...HTMLAttributes, 
+      'data-divider': '',
+      style: 'border: none; border-top: 2px solid #e5e7eb; margin: 24px 0; cursor: pointer;' 
+    }]
+  },
+  
+  addCommands() {
+    return {
+      insertDivider: () => ({ commands }) => {
+        return commands.insertContent({ type: this.name })
+      },
+    }
+  },
+});
+
+
 // 이미지 컴포넌트
-const ImageComponent = ({ node, updateAttributes, deleteNode }: any) => {
+const ImageComponent = ({ node, updateAttributes, deleteNode, extension }: any) => {
   const [showControls, setShowControls] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 외부 클릭 시 컨트롤 패널 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowControls(false);
+      }
+    };
+
+    if (showControls) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showControls]);
 
   // CSS 문자열을 React style 객체로 변환하는 함수
   const parseStyleString = (styleString: string): React.CSSProperties => {
@@ -55,6 +163,12 @@ const ImageComponent = ({ node, updateAttributes, deleteNode }: any) => {
     // 기존 width 제거하고 새로운 width 추가
     const newStyle = currentStyle.replace(/width:\s*[^;]+;?/g, '').replace(/;+/g, ';').replace(/^;|;$/g, '') + `; width: ${size}; height: auto;`;
     updateAttributes({ style: newStyle.trim() });
+    
+    // 메타데이터 업데이트 (백분율을 숫자로 변환)
+    const numericSize = parseInt(size.replace('%', ''));
+    if (extension?.options?.updateImageMetadata) {
+      extension.options.updateImageMetadata(node.attrs.src, { displaysize: numericSize });
+    }
   };
 
   const handleAlignChange = (align: string) => {
@@ -85,10 +199,19 @@ const ImageComponent = ({ node, updateAttributes, deleteNode }: any) => {
     }
     
     updateAttributes({ style: newStyle.trim() });
+    
+    // 메타데이터 업데이트
+    if (extension?.options?.updateImageMetadata) {
+      extension.options.updateImageMetadata(node.attrs.src, { alignment: align as 'left' | 'center' | 'right' | 'full' });
+    }
   };
 
   const handleDelete = () => {
     if (confirm('이미지를 삭제하시겠습니까?')) {
+      // 메타데이터에서도 제거
+      if (extension?.options?.removeImageMetadata) {
+        extension.options.removeImageMetadata(node.attrs.src);
+      }
       deleteNode();
     }
   };
@@ -133,12 +256,15 @@ const ImageComponent = ({ node, updateAttributes, deleteNode }: any) => {
       data-drag-handle=""
     >
       <div
-        onMouseEnter={() => setShowControls(true)}
-        onMouseLeave={() => setShowControls(false)}
-        className="relative inline-block"
+        ref={containerRef}
+        onClick={() => setShowControls(!showControls)}
+        className={`relative inline-block cursor-pointer transition-all duration-200 ${
+          showControls ? 'ring-2 ring-blue-500 ring-opacity-50' : 'hover:ring-1 hover:ring-gray-300'
+        }`}
         style={{ 
           maxWidth: '100%',
-          position: 'relative'
+          position: 'relative',
+          borderRadius: '8px'
         }}
       >
         <img
@@ -150,7 +276,7 @@ const ImageComponent = ({ node, updateAttributes, deleteNode }: any) => {
             maxWidth: '100%',
             height: 'auto'
           }}
-          className="rounded-lg cursor-pointer"
+          className="rounded-lg"
           onError={(e) => {
             // 이미지 로딩 실패 시 대체 텍스트 표시
             const target = e.target as HTMLImageElement;
@@ -184,6 +310,7 @@ const ImageComponent = ({ node, updateAttributes, deleteNode }: any) => {
         
         {showControls && (
           <div className="absolute top-2 right-2 bg-white rounded-lg shadow-lg p-2 flex flex-wrap gap-1 max-w-xs z-50 border">
+            <div className="w-full text-xs text-gray-500 mb-1 text-center">이미지 설정</div>
             {/* 크기 조정 버튼들 */}
             <div className="flex gap-1 w-full">
               <button
@@ -299,13 +426,50 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
   onChange, 
   placeholder = '본문을 입력하세요...', 
   className = '', 
-  slug 
+  slug,
+  images = [],
+  onImagesChange,
+  onEditorFocus
 }, ref) => {
   const [tempFiles, setTempFiles] = useState<Map<string, File>>(new Map());
+  const [imageMetadata, setImageMetadata] = useState<IBlogPostImage[]>(images);
+
+  // 이미지 메타데이터 업데이트 함수
+  const updateImageMetadata = useCallback((src: string, updates: Partial<IBlogPostImage>) => {
+    setImageMetadata(prev => prev.map(img => img.src === src ? { ...img, ...updates } : img));
+  }, []);
+
+  // 새 이미지 메타데이터 추가 함수
+  const addImageMetadata = useCallback((imageData: IBlogPostImage) => {
+    setImageMetadata(prev => [...prev, imageData]);
+  }, []);
+
+  // 이미지 메타데이터 제거 함수
+  const removeImageMetadata = useCallback((src: string) => {
+    setImageMetadata(prev => prev.filter(img => img.src !== src));
+  }, []);
+
+  // images prop이 바뀔 때만 내부 상태 동기화
+  useEffect(() => {
+    setImageMetadata(images || []);
+  }, [images]);
+  // imageMetadata가 바뀌었을 때만 상위로 알림 (prop과 다를 때만)
+  useEffect(() => {
+    if (JSON.stringify(images) !== JSON.stringify(imageMetadata)) {
+      onImagesChange?.(imageMetadata);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageMetadata]);
+
+  // 이미지 메타데이터 가져오기 함수
+  const getImages = useCallback(() => imageMetadata, [imageMetadata]);
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit, // 리스트 확장 비활성화 옵션 제거
+      TextStyle,
+      Color,
+      FontSize,
       Underline,
       Link.configure({
         openOnClick: false,
@@ -313,21 +477,31 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
           class: 'text-blue-600 underline',
         },
       }),
+      // BulletList,
+      // OrderedList,
+      // ListItem,
       EnhancedImage.configure({ 
         inline: false, 
         allowBase64: false,
+        updateImageMetadata,
+        removeImageMetadata,
       }),
       TextAlign.configure({ 
         types: ['heading', 'paragraph'] 
       }),
+      ClearBreak,
+      Divider,
     ],
     content: value,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    onFocus: ({ editor }) => {
+      onEditorFocus?.(editor);
+    },
     editorProps: {
       attributes: {
-        class: 'min-h-[300px] p-4 focus:outline-none prose prose-lg max-w-none',
+        class: 'min-h-[500px] p-4 focus:outline-none prose prose-lg max-w-none',
         placeholder,
       },
       handleDrop: (view, event, slice, moved) => {
@@ -404,6 +578,23 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
       // 임시 파일 저장
       setTempFiles(prev => new Map(prev).set(tempUrl, selectedFile));
       
+      // 이미지 크기 정보 가져오기
+      const img = document.createElement('img');
+      img.onload = () => {
+        // 이미지 메타데이터 추가
+        const imageData: IBlogPostImage = {
+          src: tempUrl,
+          alt: selectedFile.name,
+          alignment: 'center',
+          displaysize: 50,
+          originalWidth: img.naturalWidth || img.width,
+          originalHeight: img.naturalHeight || img.height,
+          uploadAt: new Date()
+        };
+        addImageMetadata(imageData);
+      };
+      img.src = tempUrl;
+      
       // 에디터에 임시 이미지 삽입 (포커스를 현재 위치로 유지)
       const { from } = editor.state.selection;
       editor.chain().focus().insertContentAt(from, {
@@ -418,7 +609,7 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
       console.error('이미지 업로드 오류:', error);
       alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
     }
-  }, [editor]);
+  }, [editor, addImageMetadata]);
 
   // 실제 blob 업로드 함수 (외부에서 호출용)
   const uploadTempImagesToBlob = useCallback(async (slug?: string) => {
@@ -461,6 +652,9 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
         const regex = new RegExp(escapedTempUrl, 'g');
         updatedContent = updatedContent.replace(regex, realUrl);
         
+        // 이미지 메타데이터의 src도 업데이트
+        updateImageMetadata(tempUrl, { src: realUrl });
+        
         // 메모리 정리
         URL.revokeObjectURL(tempUrl);
       } catch (error) {
@@ -479,24 +673,10 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
 
   // ref로 함수 노출
   useImperativeHandle(ref, () => ({
-    uploadTempImagesToBlob
-  }), [uploadTempImagesToBlob]);
+    uploadTempImagesToBlob,
+    getImages
+  }), [uploadTempImagesToBlob, getImages]);
 
-  // 링크 추가 핸들러
-  const handleAddLink = useCallback(() => {
-    if (!editor) return;
-    
-    const url = prompt('링크 URL을 입력하세요:');
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
-    }
-  }, [editor]);
-
-  // 링크 제거 핸들러
-  const handleRemoveLink = useCallback(() => {
-    if (!editor) return;
-    editor.chain().focus().unsetLink().run();
-  }, [editor]);
 
   if (!editor) {
     return (
@@ -576,6 +756,7 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
           word-wrap: break-word;
         }
         
+        
         /* float 해제를 위한 클리어픽스 */
         .ProseMirror::after,
         .ProseMirror p::after {
@@ -612,205 +793,62 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
           -moz-hyphens: auto;
           hyphens: auto;
         }
+        
+        /* Clear Break 스타일 */
+        .ProseMirror [data-clear-break] {
+          clear: both !important;
+          height: 1px;
+          margin: 8px 0;
+          border: none;
+          background: transparent;
+        }
+        
+        /* Clear Break 시각적 표시 (편집 모드에서만) */
+        .ProseMirror [data-clear-break]:hover {
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px dashed rgba(59, 130, 246, 0.3);
+          height: 8px;
+        }
+        
+        /* Divider 스타일 */
+        .ProseMirror [data-divider] {
+          border: none !important;
+          border-top: 2px solid #e5e7eb !important;
+          margin: 24px 0 !important;
+          cursor: pointer;
+        }
+        
+        .ProseMirror [data-divider]:hover {
+          border-top-color: #9ca3af !important;
+        }
+        
+        /* HTML span 태그 스타일 지원 */
+        .ProseMirror span {
+          display: inline !important;
+        }
+        
+        .ProseMirror span[style] {
+          display: inline !important;
+        }
+        
+        /* 폰트 사이즈 */
+        .ProseMirror span[style*="font-size"] {
+          line-height: 1.4 !important;
+        }
+        
+        /* 텍스트 색상 */
+        .ProseMirror span[style*="color"] {
+          /* 색상 스타일이 적용되도록 허용 */
+        }
+        
+        /* HTML 파싱 지원 - span 태그를 텍스트로 표시하지 않음 */
+        .ProseMirror {
+          white-space: normal !important;
+        }
       `}</style>
       
-      {/* 툴바 */}
-      <div className="bg-gray-50 border-b p-3 flex flex-wrap gap-2">
-        {/* 텍스트 서식 */}
-        <div className="flex gap-1 border-r pr-2">
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().toggleBold().run()} 
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-              editor.isActive('bold') 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`} 
-            title="굵게"
-          >
-            <strong>B</strong>
-          </button>
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().toggleItalic().run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive('italic') 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`} 
-            title="기울임"
-          >
-            <em>I</em>
-          </button>
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().toggleUnderline().run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive('underline') 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`} 
-            title="밑줄"
-          >
-            <u>U</u>
-          </button>
-        </div>
-
-        {/* 제목 */}
-        <div className="flex gap-1 border-r pr-2">
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive('heading', { level: 2 }) 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`} 
-            title="제목 2"
-          >
-            H2
-          </button>
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive('heading', { level: 3 }) 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`} 
-            title="제목 3"
-          >
-            H3
-          </button>
-        </div>
-
-        {/* 리스트 */}
-        <div className="flex gap-1 border-r pr-2">
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().toggleBulletList().run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive('bulletList') 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`} 
-            title="불릿 리스트"
-          >
-            • 리스트
-          </button>
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().toggleOrderedList().run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive('orderedList') 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`} 
-            title="번호 리스트"
-          >
-            1. 리스트
-          </button>
-        </div>
-
-        {/* 정렬 */}
-        <div className="flex gap-1 border-r pr-2">
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().setTextAlign('left').run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive({ textAlign: 'left' }) 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`}
-            title="왼쪽 정렬"
-          >
-            ←
-          </button>
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().setTextAlign('center').run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive({ textAlign: 'center' }) 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`}
-            title="가운데 정렬"
-          >
-            ↔
-          </button>
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().setTextAlign('right').run()} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive({ textAlign: 'right' }) 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`}
-            title="오른쪽 정렬"
-          >
-            →
-          </button>
-        </div>
-
-        {/* 링크 & 이미지 */}
-        <div className="flex gap-1 border-r pr-2">
-          <button 
-            type="button" 
-            onClick={handleAddLink} 
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              editor.isActive('link') 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white hover:bg-gray-100 border'
-            }`}
-            title="링크 추가"
-          >
-            🔗
-          </button>
-          {editor.isActive('link') && (
-            <button 
-              type="button" 
-              onClick={handleRemoveLink} 
-              className="px-3 py-1 rounded text-sm bg-red-500 text-white hover:bg-red-600 transition-colors"
-              title="링크 제거"
-            >
-              🚫
-            </button>
-          )}
-          <button 
-            type="button" 
-            onClick={() => handleImageUpload()} 
-            className="px-3 py-1 rounded text-sm bg-green-500 text-white hover:bg-green-600 transition-colors"
-            title="이미지 업로드"
-          >
-            🖼️ 이미지
-          </button>
-        </div>
-
-        {/* 실행 취소/다시 실행 */}
-        <div className="flex gap-1">
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().undo().run()} 
-            className="px-3 py-1 rounded text-sm bg-white hover:bg-gray-100 border transition-colors"
-            title="실행 취소"
-            disabled={!editor.can().undo()}
-          >
-            ↺
-          </button>
-          <button 
-            type="button" 
-            onClick={() => editor.chain().focus().redo().run()} 
-            className="px-3 py-1 rounded text-sm bg-white hover:bg-gray-100 border transition-colors"
-            title="다시 실행"
-            disabled={!editor.can().redo()}
-          >
-            ↻
-          </button>
-        </div>
-      </div>
-      
       {/* 에디터 영역 */}
-      <div className="min-h-[300px] relative">
+      <div className="min-h-[500px] relative p-4">
         <EditorContent editor={editor} />
       </div>
     </div>

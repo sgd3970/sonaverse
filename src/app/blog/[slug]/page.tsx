@@ -28,6 +28,53 @@ interface BlogPost {
   tags: string[];
 }
 
+function applyImageMetadataToBody(body: string, images: any[] = []) {
+  if (!images || images.length === 0) return body;
+  try {
+    const parser = new window.DOMParser();
+    const doc = parser.parseFromString(body, 'text/html');
+    const imgTags = doc.querySelectorAll('img');
+    imgTags.forEach(img => {
+      const meta = images.find(m => img.src.includes((m.src || '').split('/').pop() || ''));
+      if (meta) {
+        // 비율(%)에 따라 컨테이너 width 설정, aspect-ratio는 원본 비율
+        const displaysize = meta.displaysize || 100;
+        const aspect = meta.originalWidth && meta.originalHeight ? meta.originalWidth / meta.originalHeight : 16 / 9;
+        // 컨테이너 스타일 적용 (inline style)
+        const wrapper = doc.createElement('div');
+        wrapper.style.width = `${displaysize}%`;
+        wrapper.style.maxWidth = '100%';
+        wrapper.style.aspectRatio = `${meta.originalWidth} / ${meta.originalHeight}`;
+        wrapper.style.maxHeight = '500px';
+        wrapper.style.margin = '24px auto';
+        wrapper.style.display = 'flex';
+        wrapper.style.justifyContent = 'center';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.background = 'none';
+        wrapper.style.overflow = 'hidden';
+        // 이미지 스타일
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'contain'; // 비율 유지, 잘림 없음
+        img.style.objectPosition = 'center';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.borderRadius = '8px';
+        // 기존 부모에서 img를 빼서 wrapper에 넣기
+        const parent = img.parentNode;
+        if (parent) {
+          parent.replaceChild(wrapper, img);
+        }
+        wrapper.appendChild(img);
+      }
+    });
+    return doc.body.innerHTML;
+  } catch (e) {
+    console.error('[상세페이지] 이미지 메타데이터 적용 오류:', e);
+    return body;
+  }
+}
+
 const BlogDetailPage: React.FC = () => {
   const { t, i18n } = useTranslation('common');
   const params = useParams();
@@ -36,6 +83,17 @@ const BlogDetailPage: React.FC = () => {
   const [blogPost, setBlogPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // 항상 Hook 최상단에서 호출
+  const content = blogPost?.content[i18n.language as keyof typeof blogPost.content] || blogPost?.content.ko || blogPost?.content.en || { body: '' };
+  const [bodyWithImageMeta, setBodyWithImageMeta] = useState(content.body);
+  useEffect(() => {
+    if (content.body && content.images) {
+      setBodyWithImageMeta(applyImageMetadataToBody(content.body, content.images));
+    } else {
+      setBodyWithImageMeta(content.body || '');
+    }
+  }, [content.body, content.images]);
 
   useEffect(() => {
     if (slug) {
@@ -47,6 +105,7 @@ const BlogDetailPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await fetch(`/api/blog/${slug}`);
+      console.log('[상세페이지] API 응답 status:', res.status);
       
       if (!res.ok) {
         if (res.status === 404) {
@@ -56,9 +115,10 @@ const BlogDetailPage: React.FC = () => {
       }
       
       const data = await res.json();
+      console.log('[상세페이지] API 데이터:', data);
       setBlogPost(data);
     } catch (err) {
-      console.error('Error fetching blog post:', err);
+      console.error('[상세페이지] fetchBlogPost 에러:', err);
       setError(err instanceof Error ? err.message : '블로그 포스트를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -108,17 +168,9 @@ const BlogDetailPage: React.FC = () => {
     );
   }
 
-  const content = blogPost.content[i18n.language as keyof typeof blogPost.content] || blogPost.content.ko || blogPost.content.en;
-  if (!content) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-gray-600">콘텐츠를 찾을 수 없습니다.</p>
-          </div>
-        </div>
-      </div>
-    );
+  if (blogPost) {
+    console.log('[상세페이지] 렌더링 blogPost:', blogPost);
+    console.log('[상세페이지] 렌더링 content:', content);
   }
 
   return (
@@ -128,7 +180,7 @@ const BlogDetailPage: React.FC = () => {
         <div className="mb-8">
           <Link
             href="/blog"
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
+            className="inline-flex items-center px-4 py-2 rounded-md bg-[#f0ece9] text-[#22223b] hover:bg-[#e6e2dd] transition-colors"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -138,14 +190,15 @@ const BlogDetailPage: React.FC = () => {
         </div>
 
         {/* 헤더 */}
-        <article className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <article>
           {/* 썸네일 이미지 */}
           {content.thumbnail_url && (
-            <div className="w-full h-64 md:h-96 bg-gray-200">
+            <div className="w-full h-64 md:h-96 bg-gray-200 flex items-center justify-center">
               <img
                 src={content.thumbnail_url}
-                alt={content.title}
-                className="w-full h-full object-cover"
+                alt={content.title ?? ''}
+                className="object-contain object-center max-w-full h-auto"
+                style={{ maxHeight: '100%' }}
               />
             </div>
           )}
@@ -177,7 +230,7 @@ const BlogDetailPage: React.FC = () => {
             </div>
 
             {/* 태그 */}
-            {blogPost.tags && blogPost.tags.length > 0 && (
+            {/* {blogPost.tags && blogPost.tags.length > 0 && (
               <div className="mb-8">
                 <div className="flex flex-wrap gap-2">
                   {blogPost.tags.map((tag, index) => (
@@ -190,16 +243,31 @@ const BlogDetailPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* 본문 */}
             <div 
               className="prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: content.body }}
+              style={{ wordBreak: 'break-word' }}
+              dangerouslySetInnerHTML={{ __html: bodyWithImageMeta }}
             />
           </div>
         </article>
       </div>
+      {/* 본문 스타일 커스텀: a 태그 기본 스타일 제거 */}
+      <style jsx global>{`
+        .prose a {
+          color: inherit !important;
+          text-decoration: none !important;
+          font-weight: inherit !important;
+          background: none !important;
+          transition: background 0.2s;
+        }
+        .prose a:hover {
+          background: #f0ece9;
+          border-radius: 4px;
+        }
+      `}</style>
     </div>
   );
 };

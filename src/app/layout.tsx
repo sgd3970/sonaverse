@@ -58,7 +58,12 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
+
+// themeColor 관련 viewport 객체 완전히 제거
 
 export default function RootLayout({
   children,

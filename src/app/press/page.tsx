@@ -55,63 +55,146 @@ const PressPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
-      <div className="max-w-3xl w-full">
-        <h1 className="text-3xl md:text-4xl font-bold mb-8">{t('press', '언론보도')}</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4">{t('press', '언론보도')}</h1>
+          <p className="text-lg text-gray-600">소나버스의 언론보도 소식을 확인해보세요</p>
+        </div>
+        
         <div className="min-h-[440px] mb-8">
           {loading ? (
-            <div className="py-12 text-center text-gray-400 border-b border-gray-200">Loading...</div>
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
+            </div>
           ) : pressList.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 border-b border-gray-200">{t('no_results', '검색 결과가 없습니다.')}</div>
-          ) : (
-            pressList.map((item, index) => (
-              <div key={item.slug} className={`py-3 flex flex-col md:flex-row md:items-center md:justify-between ${pressList.length > 1 && index === pressList.length - 1 ? '' : 'border-b border-gray-400'}`}>
-                <div>
-                  <Link href={`/press/${item.slug}`} className="text-lg font-medium hover:underline">
-                    {item.title}
-                  </Link>
-                  <span className="ml-2 text-sm text-gray-500">{item.press_name}</span>
-                </div>
-                <div className="text-sm text-gray-400 mt-2 md:mt-0">{item.published_date?.slice(0, 10)}</div>
+            <div className="text-center py-20">
+              <div className="bg-white rounded-2xl p-12 shadow-lg border border-gray-200">
+                <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-gray-500 text-lg">{t('no_results', '검색 결과가 없습니다.')}</p>
               </div>
-            ))
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pressList.map((item, index) => (
+                <Link 
+                  key={item.slug} 
+                  href={`/press/${item.slug}`}
+                  className="group bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 hover:border-gray-300 block"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        {/* 언론사 태그 */}
+                        {item.press_name && (
+                          <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full mr-3">
+                            {item.press_name}
+                          </span>
+                        )}
+                        {/* 날짜 */}
+                        <span className="text-xs text-gray-500">
+                          {new Date(item.published_date || item.created_at).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                      
+                      {/* 제목 */}
+                      <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-slate-600 transition-colors line-clamp-2">
+                        {item.title}
+                      </h3>
+                      
+                      {/* 요약 또는 미리보기 */}
+                      {item.summary && (
+                        <p className="text-gray-600 text-sm line-clamp-2">
+                          {item.summary}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* 더보기 버튼 */}
+                    <div className="ml-4 flex-shrink-0">
+                      <span className="text-slate-600 group-hover:text-slate-800 text-sm font-medium flex items-center">
+                        더보기
+                        <svg className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           )}
         </div>
-        {/* 하단 고정 검색창+페이지네이션 */}
-        <div className="sticky bottom-0 bg-white/90 pt-6 pb-2 mt-8 z-10 flex flex-col items-center border-t border-gray-100">
-          <div className="mb-4 w-full max-w-md">
-            <input
-              type="text"
-              value={search}
-              onChange={handleSearchChange}
-              placeholder={t('search_placeholder', '검색어를 입력하세요')}
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
-          <div className="flex gap-2 items-center justify-center">
-            <button
-              onClick={() => handlePage(page - 1)}
-              disabled={page <= 1}
-              className="px-3 py-1 rounded border text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              &lt;
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => handlePage(i + 1)}
-                className={`px-3 py-1 rounded border ${page === i + 1 ? 'bg-[#bda191] text-white border-[#bda191]' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}`}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => handlePage(page + 1)}
-              disabled={page >= totalPages}
-              className="px-3 py-1 rounded border text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              &gt;
-            </button>
+        {/* 검색창과 페이지네이션 */}
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 mt-12">
+          <div className="flex flex-col items-center space-y-6">
+            {/* 검색창 */}
+            <div className="w-full max-w-md relative">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={handleSearchChange}
+                placeholder={t('search_placeholder', '검색어를 입력하세요')}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all"
+              />
+            </div>
+            
+            {/* 페이지네이션 */}
+            {totalPages > 1 && (
+              <div className="flex gap-2 items-center justify-center">
+                <button
+                  onClick={() => handlePage(page - 1)}
+                  disabled={page <= 1}
+                  className="px-4 py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 7) {
+                    pageNumber = i + 1;
+                  } else if (page <= 4) {
+                    pageNumber = i + 1;
+                  } else if (page >= totalPages - 3) {
+                    pageNumber = totalPages - 6 + i;
+                  } else {
+                    pageNumber = page - 3 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNumber}
+                      onClick={() => handlePage(pageNumber)}
+                      className={`px-4 py-2 rounded-lg border transition-colors ${
+                        page === pageNumber 
+                          ? 'bg-slate-700 text-white border-slate-700' 
+                          : 'text-gray-700 border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => handlePage(page + 1)}
+                  disabled={page >= totalPages}
+                  className="px-4 py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

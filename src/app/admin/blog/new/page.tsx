@@ -4,6 +4,8 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import TiptapEditorDynamic from '@/components/admin/TiptapEditorDynamic';
+import BlogPreviewModal from '@/components/admin/BlogPreviewModal';
+import FloatingToolbar from '@/components/admin/FloatingToolbar';
 import type { TiptapEditorRef } from '@/components/admin/TiptapEditor';
 
 const NewBlogPage: React.FC = () => {
@@ -12,18 +14,21 @@ const NewBlogPage: React.FC = () => {
   const [formData, setFormData] = useState({
     slug: '',
     content: {
-      ko: { title: '', subtitle: '', body: '', thumbnail_url: '' },
-      en: { title: '', subtitle: '', body: '', thumbnail_url: '' }
+      ko: { title: '', subtitle: '', body: '', thumbnail_url: '', images: [] },
+      en: { title: '', subtitle: '', body: '', thumbnail_url: '', images: [] }
     },
-    tags: '',
-    is_published: true
+    tags: ''
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [showPreview, setShowPreview] = useState(false);
   
   // 에디터 ref 추가
   const koEditorRef = useRef<TiptapEditorRef>(null);
   const enEditorRef = useRef<TiptapEditorRef>(null);
+  
+  // 현재 활성 에디터 추적
+  const [activeEditor, setActiveEditor] = useState<any>(null);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -40,6 +45,20 @@ const NewBlogPage: React.FC = () => {
         [lang]: {
           ...prev.content[lang as keyof typeof prev.content],
           [field]: value
+        }
+      }
+    }));
+  };
+
+  // 이미지 메타데이터 변경 핸들러
+  const handleImagesChange = (lang: string, images: any[]) => {
+    setFormData(prev => ({
+      ...prev,
+      content: {
+        ...prev.content,
+        [lang]: {
+          ...prev.content[lang as keyof typeof prev.content],
+          images
         }
       }
     }));
@@ -96,6 +115,7 @@ const NewBlogPage: React.FC = () => {
     }
 
     setLoading(true);
+    console.log('[블로그 생성] 제출 formData:', formData);
     
     try {
       let thumbnailUrl = '';
@@ -104,7 +124,9 @@ const NewBlogPage: React.FC = () => {
       if (thumbnailFile) {
         try {
           thumbnailUrl = await uploadThumbnail(thumbnailFile, formData.slug);
+          console.log('[썸네일 업로드 성공] URL:', thumbnailUrl);
         } catch (error) {
+          console.error('[썸네일 업로드 실패]', error);
           alert('썸네일 업로드에 실패했습니다.');
           setLoading(false);
           return;
@@ -118,66 +140,70 @@ const NewBlogPage: React.FC = () => {
       if (koEditorRef.current) {
         try {
           updatedKoBody = await koEditorRef.current.uploadTempImagesToBlob(formData.slug);
+          console.log('[한국어 본문 이미지 업로드 후 HTML]', updatedKoBody);
         } catch (error) {
-          console.error('한국어 에디터 이미지 업로드 실패:', error);
+          console.error('[한국어 에디터 이미지 업로드 실패]:', error);
         }
       }
 
       if (enEditorRef.current) {
         try {
           updatedEnBody = await enEditorRef.current.uploadTempImagesToBlob(formData.slug);
+          console.log('[영어 본문 이미지 업로드 후 HTML]', updatedEnBody);
         } catch (error) {
-          console.error('영어 에디터 이미지 업로드 실패:', error);
+          console.error('[영어 에디터 이미지 업로드 실패]:', error);
         }
       }
 
-      const tagsArray = parseTagsToArray(formData.tags);
-      
-      const submitData = {
+      // 최종 DB로 전송할 데이터 구조
+      const payload = {
         ...formData,
+        thumbnail_url: thumbnailUrl,
         content: {
           ko: {
             ...formData.content.ko,
             body: updatedKoBody,
-            thumbnail_url: thumbnailUrl
           },
           en: {
             ...formData.content.en,
             body: updatedEnBody,
-            thumbnail_url: thumbnailUrl
           }
-        },
-        tags: tagsArray
+        }
       };
+      console.log('[최종 DB 전송 payload]', payload);
 
+      // 실제 API 요청
       const token = localStorage.getItem('adminToken');
       const response = await fetch('/api/blog', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(submitData)
+        body: JSON.stringify(payload),
       });
+      const result = await response.json();
+      console.log('[블로그 생성 API 응답]', result);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '블로그 포스트 생성에 실패했습니다.');
+        alert(result.error || '블로그 생성에 실패했습니다.');
+        setLoading(false);
+        return;
       }
 
-      alert('블로그 포스트가 성공적으로 생성되었습니다!');
-      router.push('/admin/blog');
+      alert('블로그가 성공적으로 생성되었습니다!');
+      window.location.href = '/admin/blog';
     } catch (error) {
-      console.error('블로그 포스트 생성 오류:', error);
-      alert(error instanceof Error ? error.message : '오류가 발생했습니다.');
+      console.error('[블로그 생성 전체 에러]', error);
+      alert('블로그 생성 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6">
+    <div className="bg-gray-50">
+      <div className="max-w-5xl mx-auto p-6">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">새 블로그 포스트 작성</h1>
@@ -287,6 +313,9 @@ const NewBlogPage: React.FC = () => {
                   onChange={(value) => handleContentChange('ko', 'body', value)}
                   slug={formData.slug}
                   placeholder="한국어 본문을 입력하세요..."
+                  images={formData.content.ko.images}
+                  onImagesChange={(images) => handleImagesChange('ko', images)}
+                  onEditorFocus={(editor) => setActiveEditor(editor)}
                 />
               </div>
             </div>
@@ -328,27 +357,14 @@ const NewBlogPage: React.FC = () => {
                   onChange={(value) => handleContentChange('en', 'body', value)}
                   slug={formData.slug}
                   placeholder="영어 본문을 입력하세요..."
+                  images={formData.content.en.images}
+                  onImagesChange={(images) => handleImagesChange('en', images)}
+                  onEditorFocus={(editor) => setActiveEditor(editor)}
                 />
               </div>
             </div>
           </div>
 
-          {/* 공개 설정 */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">공개 설정</h2>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="is_published"
-                checked={formData.is_published}
-                onChange={(e) => handleInputChange('is_published', e.target.checked)}
-                className="mr-2"
-              />
-              <label htmlFor="is_published" className="text-sm text-gray-700">
-                즉시 공개
-              </label>
-            </div>
-          </div>
 
           {/* 제출 버튼 */}
           <div className="flex justify-end space-x-4">
@@ -359,6 +375,16 @@ const NewBlogPage: React.FC = () => {
               취소
             </Link>
             <button
+              type="button"
+              onClick={() => {
+                console.log('Preview button clicked, formData:', formData);
+                setShowPreview(true);
+              }}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              미리보기
+            </button>
+            <button
               type="submit"
               disabled={loading}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
@@ -367,6 +393,48 @@ const NewBlogPage: React.FC = () => {
             </button>
           </div>
         </form>
+
+        {/* 미리보기 모달 */}
+        <BlogPreviewModal
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          formData={formData}
+          thumbnailPreview={thumbnailPreview}
+        />
+
+        {/* 플로팅 툴바 */}
+        <FloatingToolbar
+          editor={activeEditor}
+          onImageUpload={() => {
+            // 현재 활성 에디터에서 이미지 업로드 실행
+            if (activeEditor) {
+              // TiptapEditor의 handleImageUpload 메서드를 직접 호출할 수 없으므로
+              // 에디터에 포커스를 주고 임시로 이미지 업로드 트리거
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.multiple = true;
+              
+              input.onchange = async () => {
+                if (input.files) {
+                  const files = Array.from(input.files);
+                  for (const file of files) {
+                    const tempUrl = URL.createObjectURL(file);
+                    activeEditor.chain().focus().insertContent({
+                      type: 'image',
+                      attrs: {
+                        src: tempUrl,
+                        alt: file.name
+                      }
+                    }).run();
+                  }
+                }
+              };
+              
+              input.click();
+            }
+          }}
+        />
       </div>
     </div>
   );

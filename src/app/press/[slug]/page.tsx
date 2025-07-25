@@ -125,8 +125,8 @@ const PressDetailPage: React.FC = () => {
               rel="noopener noreferrer" 
               className="inline-block bg-[#bda191] text-white px-6 py-3 rounded shadow hover:bg-[#a88b6a] transition"
             >
-              {t('go_to_original', '원본 기사 보기')}
-            </a>
+          {t('go_to_original', '원본 기사 보기')}
+        </a>
           </div>
         )}
       </div>
