@@ -495,17 +495,17 @@ const HomePage: React.FC = () => {
   const { i18n } = useTranslation('common');
   const lang = i18n.language === 'en' ? 'en' : 'ko';
   const [currentSection, setCurrentSection] = useState(0);
-  const [isVisible, setIsVisible] = useState({});
+  const [isVisible, setIsVisible] = useState<any>({});
   const [pressData, setPressData] = useState([]);
   const [blogData, setBlogData] = useState([]);
-  const [brandStoryData, setBrandStoryData] = useState([]);
+  const [brandStoryData, setBrandStoryData] = useState<any[]>([]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      (entries: any[]) => {
+        entries.forEach((entry: any) => {
           if (entry.isIntersecting) {
-            setIsVisible(prev => ({ ...prev, [entry.target.id]: true }));
+            setIsVisible((prev: any) => ({ ...prev, [entry.target.id]: true }));
           }
         });
       },
@@ -543,7 +543,7 @@ const HomePage: React.FC = () => {
       .then(data => {
         console.log('Pages data:', data);
         // Filter pages by category or type if available
-        let brandStories = Array.isArray(data.results || data) ? (data.results || data).filter(page => 
+        let brandStories: any[] = Array.isArray(data.results || data) ? (data.results || data).filter((page: any) => 
           page.category === 'brand-story' || 
           page.type === 'brand-story' ||
           page.slug?.includes('brand')
@@ -629,20 +629,20 @@ const HomePage: React.FC = () => {
             created_at: '2024-01-15',
             published_date: '2024-01-15'
           }
-        ]);
+        ] as any[]);
       });
   }, [lang]);
 
-  const content = heroContent[lang];
-  const problems = problemsToSolve[lang];
-  const manbo = manboDetails[lang];
-  const bodeum = bodeumDetails[lang];
-  const team = teamInfo[lang];
-  const history = companyHistory[lang];
-  const business = businessStrategy[lang];
+  const content: any = heroContent[lang];
+  const problems: any = problemsToSolve[lang];
+  const manbo: any = manboDetails[lang];
+  const bodeum: any = bodeumDetails[lang];
+  const team: any = teamInfo[lang];
+  const history: any = companyHistory[lang];
+  const business: any = businessStrategy[lang];
 
   // Auto-sliding Carousel component
-  const ContentCarousel = ({ items, type }) => {
+  const ContentCarousel = ({ items, type }: { items: any[]; type: string }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
     
@@ -676,7 +676,7 @@ const HomePage: React.FC = () => {
             className="flex transition-transform duration-500 ease-in-out"
             style={{ transform: `translateX(-${currentIndex * 33.333}%)` }}
           >
-            {items.map((item, idx) => {
+            {items.map((item: any, idx: any) => {
               const itemContent = item.content?.[lang] || item.content?.ko || item.content?.en || item;
               const thumbnailUrl = itemContent.thumbnail_url || item.thumbnail || '/logo/nonImage_logo.png';
               const title = itemContent.title || item.title || 'No Title';
@@ -744,7 +744,7 @@ const HomePage: React.FC = () => {
           
           {/* 통계 */}
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {content.stats.map((stat, idx) => (
+            {content.stats.map((stat: any, idx: number) => (
               <div key={idx} className={`transform transition-all duration-1000 delay-${(idx + 1) * 200} ${isVisible.hero ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-5 border border-white/20">
                   <div className="text-3xl font-bold text-orange-200 mb-2">{stat.number}</div>
@@ -776,7 +776,7 @@ const HomePage: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {problems.map((problem, idx) => (
+            {problems.map((problem: any, idx: number) => (
               <div 
                 key={idx} 
                 className={`transform transition-all duration-1000 delay-${idx * 200} ${isVisible.problems ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
@@ -814,7 +814,7 @@ const HomePage: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {manbo.features.map((feature, idx) => (
+            {manbo.features.map((feature: any, idx: number) => (
               <div 
                 key={idx} 
                 className={`transform transition-all duration-1000 delay-${idx * 200} ${isVisible.manbo ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
@@ -823,7 +823,7 @@ const HomePage: React.FC = () => {
                   <h4 className="text-lg font-bold mb-3 text-orange-200">{feature.title}</h4>
                   <p className="text-sm text-gray-300 mb-4 leading-relaxed">{feature.description}</p>
                   <ul className="space-y-2">
-                    {feature.details.map((detail, detailIdx) => (
+                    {feature.details.map((detail: any, detailIdx: any) => (
                       <li key={detailIdx} className="text-xs text-gray-400 flex items-start">
                         <span className="text-orange-400 mr-2">•</span>
                         {detail}
@@ -858,7 +858,7 @@ const HomePage: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {bodeum.features.map((feature, idx) => (
+            {bodeum.features.map((feature: any, idx: number) => (
               <div 
                 key={idx} 
                 className={`transform transition-all duration-1000 delay-${idx * 100} ${isVisible.bodeum ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
@@ -867,7 +867,7 @@ const HomePage: React.FC = () => {
                   <div className="text-3xl mb-3">{feature.icon}</div>
                   <h4 className="text-lg font-bold mb-2 text-slate-800">{feature.title}</h4>
                   <div className="text-sm text-gray-600">
-                    {feature.description.split(/<br\s*\/?>|\n/).map((line, i, arr) => (
+                    {feature.description.split(/<br\s*\/?>|\n/).map((line: any, i: any, arr: any[]) => (
                       <React.Fragment key={i}>
                         {line}
                         {i < arr.length - 1 && <br />}
@@ -884,7 +884,7 @@ const HomePage: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl">
                 <h4 className="text-2xl font-bold mb-6 text-purple-800">{lang === 'ko' ? '현재 라인업' : 'Current Lineup'}</h4>
                 <ul className="space-y-3">
-                  {bodeum.lineup.map((item, idx) => (
+                  {bodeum.lineup.map((item: any, idx: any) => (
                     <li key={idx} className="flex items-center text-gray-700">
                       <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
                       {item}
@@ -957,7 +957,7 @@ const HomePage: React.FC = () => {
               {lang === 'ko' ? '핵심 팀' : 'Core Team'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {team.coreTeam.map((member, idx) => (
+              {team.coreTeam.map((member: any, idx: any) => (
                 <div 
                   key={idx} 
                   className={`transform transition-all duration-1000 delay-${(idx + 1) * 200} ${isVisible.team ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
@@ -987,7 +987,7 @@ const HomePage: React.FC = () => {
               {lang === 'ko' ? '자문위원' : 'Advisors'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {team.advisors.map((advisor, idx) => (
+              {team.advisors.map((advisor: any, idx: any) => (
                 <div 
                   key={idx} 
                   className={`transform transition-all duration-1000 delay-${(idx + 7) * 100} ${isVisible.team ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
