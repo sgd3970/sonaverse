@@ -26,9 +26,9 @@ const EditBlogPage: React.FC = () => {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   
-  // 에디터 ref 추가 (TiptapEditor 사용으로 인해 제거)
-  // const koEditorRef = useRef<TiptapEditorRef>(null);
-  // const enEditorRef = useRef<TiptapEditorRef>(null);
+  // 에디터 ref 추가
+  const koEditorRef = useRef<any>(null);
+  const enEditorRef = useRef<any>(null);
 
   useEffect(() => {
     if (slug) {
@@ -239,7 +239,7 @@ const EditBlogPage: React.FC = () => {
       let updatedKoBody = formData.content.ko.body;
       let updatedEnBody = formData.content.en.body;
 
-      if (koEditorRef.current) {
+      if (koEditorRef.current && koEditorRef.current.uploadTempImagesToBlob) {
         try {
           updatedKoBody = await koEditorRef.current.uploadTempImagesToBlob(formData.slug);
           console.log('[한국어 본문 이미지 업로드 후 HTML]', updatedKoBody);
@@ -248,7 +248,7 @@ const EditBlogPage: React.FC = () => {
         }
       }
 
-      if (enEditorRef.current) {
+      if (enEditorRef.current && enEditorRef.current.uploadTempImagesToBlob) {
         try {
           updatedEnBody = await enEditorRef.current.uploadTempImagesToBlob(formData.slug);
           console.log('[영어 본문 이미지 업로드 후 HTML]', updatedEnBody);
@@ -455,6 +455,7 @@ const EditBlogPage: React.FC = () => {
                   본문 *
                 </label>
                 <TiptapEditor
+                  ref={koEditorRef}
                   value={formData.content.ko.body}
                   onChange={(value: string) => handleContentChange('ko', 'body', value)}
                   slug={formData.slug}
@@ -497,6 +498,7 @@ const EditBlogPage: React.FC = () => {
                   본문
                 </label>
                 <TiptapEditor
+                  ref={enEditorRef}
                   value={formData.content.en.body}
                   onChange={(value: string) => handleContentChange('en', 'body', value)}
                   slug={formData.slug}
