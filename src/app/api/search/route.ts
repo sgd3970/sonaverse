@@ -1,172 +1,172 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '../../../lib/db';
+import { dbConnect } from '../../../lib/db';
 import BlogPost from '../../../models/BlogPost';
 import PressRelease from '../../../models/PressRelease';
-import Product from '../../../models/Product';
 import BrandStory from '../../../models/BrandStory';
-import { addSearchKeyword } from '../admin/analytics/route';
+import Product from '../../../models/Product';
+import SearchKeyword from '../../../models/SearchKeyword';
 
-/**
- * 통합 검색 API
- * 블로그, 언론보도, 제품, 브랜드 스토리에서 검색을 수행합니다.
- */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
+    const type = searchParams.get('type') || 'all';
     const lang = searchParams.get('lang') || 'ko';
 
     if (!query || query.trim().length === 0) {
-      return NextResponse.json({ 
-        success: true,
-        results: [],
-        total: 0
-      });
+      return NextResponse.json({
+        success: false,
+        error: '검색어가 필요합니다.'
+      }, { status: 400 });
     }
+
+    await dbConnect();
 
     // 검색 키워드 로깅 (비동기로 처리)
     addSearchKeyword(query.trim()).catch(error => {
       console.error('Error logging search keyword:', error);
     });
 
-    await connectDB();
+    const searchResults: any = {
+      blog: [],
+      press: [],
+      brandStory: [],
+      products: []
+    };
 
-    // 검색어 정규화
-    const searchQuery = query.trim();
-    const regexQuery = new RegExp(searchQuery, 'i');
+    // 블로그 검색
+    if (type === 'all' || type === 'blog') {
+      const blogResults = await BlogPost.find({
+        is_published: true,
+        $or: [
+          { [`title.${lang}`]: { $regex: query, $options: 'i' } },
+          { [`content.${lang}`]: { $regex: query, $options: 'i' } },
+          { [`excerpt.${lang}`]: { $regex: query, $options: 'i' } }
+        ]
+      }).sort({ created_at: -1 }).limit(10);
 
-    // 각 컬렉션에서 검색 (병렬 처리)
-    const [blogResults, pressResults, productResults, brandStoryResults] = await Promise.all([
-      BlogPost.find({
-        $and: [
-          { is_published: true },
-          {
-            $or: [
-              { 'content.ko.title': regexQuery },
-              { 'content.ko.subtitle': regexQuery },
-              { 'content.ko.body': regexQuery },
-              { 'content.en.title': regexQuery },
-              { 'content.en.subtitle': regexQuery },
-              { 'content.en.body': regexQuery },
-              { tags: { $in: [regexQuery] } }
-            ]
-          }
-        ]
-      }).limit(10).sort({ created_at: -1 }),
-      
-      PressRelease.find({
-        $and: [
-          { is_active: true },
-          {
-            $or: [
-              { 'content.ko.title': regexQuery },
-              { 'content.ko.body': regexQuery },
-              { 'content.en.title': regexQuery },
-              { 'content.en.body': regexQuery },
-              { 'press_name.ko': regexQuery },
-              { 'press_name.en': regexQuery }
-            ]
-          }
-        ]
-      }).limit(10).sort({ published_date: -1 }),
-      
-      Product.find({
-        $and: [
-          { is_active: true },
-          {
-            $or: [
-              { 'content.ko.title': regexQuery },
-              { 'content.ko.description': regexQuery },
-              { 'content.en.title': regexQuery },
-              { 'content.en.description': regexQuery }
-            ]
-          }
-        ]
-      }).limit(10).sort({ created_at: -1 }),
-      
-      BrandStory.find({
-        $and: [
-          { is_published: true },
-          {
-            $or: [
-              { 'content.ko.title': regexQuery },
-              { 'content.ko.subtitle': regexQuery },
-              { 'content.ko.body': regexQuery },
-              { 'content.en.title': regexQuery },
-              { 'content.en.subtitle': regexQuery },
-              { 'content.en.body': regexQuery }
-            ]
-          }
-        ]
-      }).limit(10).sort({ created_at: -1 })
-    ]);
-
-    // 결과를 통합하고 정규화
-    const results = [
-      ...blogResults.map(item => ({
+      searchResults.blog = blogResults.map(post => ({
+        id: post._id,
         type: 'blog',
-        slug: item.slug,
-        title_ko: item.content?.ko?.title || '',
-        title_en: item.content?.en?.title || '',
-        subtitle_ko: item.content?.ko?.subtitle || '',
-        subtitle_en: item.content?.en?.subtitle || '',
-        created_at: item.created_at
-      })),
-      ...pressResults.map(item => ({
+        title: post.title[lang],
+        excerpt: post.excerpt[lang],
+        slug: post.slug,
+        created_at: post.created_at,
+        image: post.image
+      }));
+    }
+
+    // 언론보도 검색
+    if (type === 'all' || type === 'press') {
+      const pressResults = await PressRelease.find({
+        is_published: true,
+        $or: [
+          { [`title.${lang}`]: { $regex: query, $options: 'i' } },
+          { [`content.${lang}`]: { $regex: query, $options: 'i' } },
+          { [`excerpt.${lang}`]: { $regex: query, $options: 'i' } }
+        ]
+      }).sort({ created_at: -1 }).limit(10);
+
+      searchResults.press = pressResults.map(press => ({
+        id: press._id,
         type: 'press',
-        slug: item.slug,
-        title_ko: item.content?.ko?.title || '',
-        title_en: item.content?.en?.title || '',
-        subtitle_ko: item.press_name?.ko || '',
-        subtitle_en: item.press_name?.en || '',
-        published_date: item.published_date
-      })),
-      ...productResults.map(item => ({
+        title: press.title[lang],
+        excerpt: press.excerpt[lang],
+        slug: press.slug,
+        created_at: press.created_at,
+        image: press.image
+      }));
+    }
+
+    // 브랜드 스토리 검색
+    if (type === 'all' || type === 'brand-story') {
+      const brandStoryResults = await BrandStory.find({
+        is_active: true,
+        $or: [
+          { [`title.${lang}`]: { $regex: query, $options: 'i' } },
+          { [`content.${lang}`]: { $regex: query, $options: 'i' } },
+          { [`excerpt.${lang}`]: { $regex: query, $options: 'i' } }
+        ]
+      }).sort({ created_at: -1 }).limit(10);
+
+      searchResults.brandStory = brandStoryResults.map(story => ({
+        id: story._id,
+        type: 'brand-story',
+        title: story.title[lang],
+        excerpt: story.excerpt[lang],
+        slug: story.slug,
+        created_at: story.created_at,
+        image: story.image
+      }));
+    }
+
+    // 제품 검색
+    if (type === 'all' || type === 'products') {
+      const productResults = await Product.find({
+        is_active: true,
+        $or: [
+          { [`name.${lang}`]: { $regex: query, $options: 'i' } },
+          { [`description.${lang}`]: { $regex: query, $options: 'i' } },
+          { [`features.${lang}`]: { $regex: query, $options: 'i' } }
+        ]
+      }).sort({ created_at: -1 }).limit(10);
+
+      searchResults.products = productResults.map(product => ({
+        id: product._id,
         type: 'product',
-        slug: item.slug,
-        title_ko: item.content?.ko?.title || '',
-        title_en: item.content?.en?.title || '',
-        subtitle_ko: item.content?.ko?.description || '',
-        subtitle_en: item.content?.en?.description || '',
-        created_at: item.created_at
-      })),
-      ...brandStoryResults.map(item => ({
-        type: 'brand_story',
-        slug: item.slug,
-        title_ko: item.content?.ko?.title || '',
-        title_en: item.content?.en?.title || '',
-        subtitle_ko: item.content?.ko?.subtitle || '',
-        subtitle_en: item.content?.en?.subtitle || '',
-        created_at: item.created_at
-      }))
-    ];
+        name: product.name[lang],
+        description: product.description[lang],
+        slug: product.slug,
+        created_at: product.created_at,
+        image: product.image
+      }));
+    }
 
-    // 검색어와의 관련성에 따라 정렬 (제목에 검색어가 포함된 것을 우선)
-    results.sort((a, b) => {
-      const aTitle = lang === 'en' ? a.title_en : a.title_ko;
-      const bTitle = lang === 'en' ? b.title_en : b.title_ko;
-      
-      const aTitleMatch = aTitle.toLowerCase().includes(searchQuery.toLowerCase());
-      const bTitleMatch = bTitle.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      if (aTitleMatch && !bTitleMatch) return -1;
-      if (!aTitleMatch && bTitleMatch) return 1;
-      return 0;
-    });
+    // 전체 결과 수 계산
+    const totalResults = 
+      searchResults.blog.length + 
+      searchResults.press.length + 
+      searchResults.brandStory.length + 
+      searchResults.products.length;
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      results,
-      total: results.length,
-      query: searchQuery
+      query,
+      results: searchResults,
+      total: totalResults,
+      type,
+      lang
     });
+
   } catch (error) {
-    console.error('Search error:', error);
-    return NextResponse.json({ 
+    console.error('Search API error:', error);
+    return NextResponse.json({
       success: false,
-      results: [],
-      total: 0,
       error: '검색 중 오류가 발생했습니다.'
-    });
+    }, { status: 500 });
+  }
+}
+
+// 검색 키워드 로깅 함수
+async function addSearchKeyword(keyword: string) {
+  try {
+    await dbConnect();
+    
+    const existingKeyword = await SearchKeyword.findOne({ keyword });
+    
+    if (existingKeyword) {
+      existingKeyword.count += 1;
+      existingKeyword.lastUsed = new Date();
+      await existingKeyword.save();
+    } else {
+      const newKeyword = new SearchKeyword({
+        keyword,
+        count: 1,
+        lastUsed: new Date()
+      });
+      await newKeyword.save();
+    }
+  } catch (error) {
+    console.error('Error adding search keyword:', error);
   }
 } 

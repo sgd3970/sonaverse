@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '../../../../lib/auth-server';
-import { connectDB } from '../../../../lib/db';
+import { dbConnect } from '../../../../lib/db';
 import AdminSetting from '../../../../models/AdminSetting';
 
 /**
- * GET - 사이트 설정 조회
+ * GET - 관리자 설정 조회
  */
 export async function GET(request: NextRequest) {
   try {
@@ -17,21 +17,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
-    // 모든 설정 조회
-    const settings = await AdminSetting.find({}).sort({ key: 1 });
+    // 설정 조회 (첫 번째 설정 또는 기본값)
+    let settings = await AdminSetting.findOne({});
     
-    // 설정을 객체로 변환
-    const settingsObject = settings.reduce((acc, setting) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, any>);
+    if (!settings) {
+      // 기본 설정 생성
+      settings = new AdminSetting({
+        siteName: { ko: '소나버스', en: 'Sonaverse' },
+        siteDescription: { ko: '소나버스 공식 웹사이트', en: 'Sonaverse Official Website' },
+        contactEmail: 'contact@sonaverse.com',
+        contactPhone: '02-1234-5678',
+        address: { ko: '서울특별시 강남구', en: 'Gangnam-gu, Seoul' },
+        socialMedia: {
+          facebook: '',
+          twitter: '',
+          instagram: '',
+          linkedin: ''
+        }
+      });
+      await settings.save();
+    }
 
     return NextResponse.json({
       success: true,
-      settings: settingsObject,
-      total: settings.length
+      settings
     });
   } catch (error) {
     console.error('GET /api/admin/settings error:', error);
@@ -43,63 +54,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST - 사이트 설정 생성/수정
- */
-export async function POST(request: NextRequest) {
-  try {
-    // 인증 확인
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: '인증이 필요합니다.' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const { settings } = body;
-
-    if (!settings || typeof settings !== 'object') {
-      return NextResponse.json(
-        { success: false, error: '설정 데이터가 필요합니다.' },
-        { status: 400 }
-      );
-    }
-
-    await connectDB();
-
-    // 각 설정을 저장/업데이트
-    const results = [];
-    for (const [key, value] of Object.entries(settings)) {
-      try {
-        const setting = await AdminSetting.findOneAndUpdate(
-          { key },
-          { key, value },
-          { upsert: true, new: true }
-        );
-        results.push(setting);
-      } catch (error) {
-        console.error(`Error updating setting ${key}:`, error);
-        results.push({ key, error: '업데이트 실패' });
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: '설정이 성공적으로 저장되었습니다.',
-      results
-    });
-  } catch (error) {
-    console.error('POST /api/admin/settings error:', error);
-    return NextResponse.json(
-      { success: false, error: '설정 저장에 실패했습니다.' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PUT - 사이트 설정 전체 업데이트
+ * PUT - 관리자 설정 수정
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -113,37 +68,94 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { settings } = body;
+    const { siteName, siteDescription, contactEmail, contactPhone, address, socialMedia } = body;
 
-    if (!settings || typeof settings !== 'object') {
+    // 입력 검증
+    if (!siteName || !siteDescription || !contactEmail) {
       return NextResponse.json(
-        { success: false, error: '설정 데이터가 필요합니다.' },
+        { success: false, error: '필수 정보가 누락되었습니다.' },
         { status: 400 }
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
-    // 기존 설정 모두 삭제
-    await AdminSetting.deleteMany({});
-
-    // 새로운 설정들 저장
-    const newSettings = [];
-    for (const [key, value] of Object.entries(settings)) {
-      const setting = new AdminSetting({ key, value });
-      await setting.save();
-      newSettings.push(setting);
+    // 기존 설정 찾기 또는 새로 생성
+    let settings = await AdminSetting.findOne({});
+    
+    if (!settings) {
+      settings = new AdminSetting();
     }
+
+    // 설정 업데이트
+    if (siteName) settings.siteName = siteName;
+    if (siteDescription) settings.siteDescription = siteDescription;
+    if (contactEmail) settings.contactEmail = contactEmail;
+    if (contactPhone) settings.contactPhone = contactPhone;
+    if (address) settings.address = address;
+    if (socialMedia) settings.socialMedia = socialMedia;
+
+    await settings.save();
 
     return NextResponse.json({
       success: true,
-      message: '설정이 성공적으로 업데이트되었습니다.',
-      settings: newSettings
+      message: '설정이 성공적으로 저장되었습니다.',
+      settings
     });
   } catch (error) {
     console.error('PUT /api/admin/settings error:', error);
     return NextResponse.json(
-      { success: false, error: '설정 업데이트에 실패했습니다.' },
+      { success: false, error: '설정 저장에 실패했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST - 관리자 설정 초기화
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // 인증 확인
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: '인증이 필요합니다.' },
+        { status: 401 }
+      );
+    }
+
+    await dbConnect();
+
+    // 기존 설정 삭제
+    await AdminSetting.deleteMany({});
+
+    // 기본 설정 생성
+    const defaultSettings = new AdminSetting({
+      siteName: { ko: '소나버스', en: 'Sonaverse' },
+      siteDescription: { ko: '소나버스 공식 웹사이트', en: 'Sonaverse Official Website' },
+      contactEmail: 'contact@sonaverse.com',
+      contactPhone: '02-1234-5678',
+      address: { ko: '서울특별시 강남구', en: 'Gangnam-gu, Seoul' },
+      socialMedia: {
+        facebook: '',
+        twitter: '',
+        instagram: '',
+        linkedin: ''
+      }
+    });
+
+    await defaultSettings.save();
+
+    return NextResponse.json({
+      success: true,
+      message: '설정이 기본값으로 초기화되었습니다.',
+      settings: defaultSettings
+    });
+  } catch (error) {
+    console.error('POST /api/admin/settings error:', error);
+    return NextResponse.json(
+      { success: false, error: '설정 초기화에 실패했습니다.' },
       { status: 500 }
     );
   }

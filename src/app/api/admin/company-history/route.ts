@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '../../../../lib/auth-server';
-import { connectDB } from '../../../../lib/db';
+import { dbConnect } from '../../../../lib/db';
 import CompanyHistory from '../../../../models/CompanyHistory';
 
 /**
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
     // 모든 회사 연혁 조회 (날짜순 정렬)
     const history = await CompanyHistory.find({}).sort({ year: -1, month: -1 });
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
     // 새 연혁 생성
     const newHistory = new CompanyHistory({
@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
     // 연혁 존재 확인
     const existingHistory = await CompanyHistory.findById(historyId);
@@ -202,7 +202,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
     // 연혁 존재 확인
     const existingHistory = await CompanyHistory.findById(historyId);

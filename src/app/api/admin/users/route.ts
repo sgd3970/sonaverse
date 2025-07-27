@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '../../../../lib/auth-server';
-import { connectDB } from '../../../../lib/db';
+import { dbConnect } from '../../../../lib/db';
 import AdminUser from '../../../../models/AdminUser';
 import { hashPassword, comparePassword } from '../../../../lib/auth-server';
 
@@ -18,10 +18,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
     // 모든 관리자 사용자 조회 (비밀번호 제외)
-    const users = await AdminUser.find({}, { password: 0 }).sort({ created_at: -1 });
+    const users = await AdminUser.find({}, '-password').sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,
@@ -52,24 +52,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, username, password, role = 'admin' } = body;
+    const { username, email, password, role } = body;
 
     // 입력 검증
-    if (!email || !username || !password) {
+    if (!username || !email || !password) {
       return NextResponse.json(
-        { success: false, error: '이메일, 사용자명, 비밀번호가 필요합니다.' },
+        { success: false, error: '사용자명, 이메일, 비밀번호가 필요합니다.' },
         { status: 400 }
       );
     }
 
-    if (password.length < 8) {
+    if (password.length < 6) {
       return NextResponse.json(
-        { success: false, error: '비밀번호는 최소 8자 이상이어야 합니다.' },
+        { success: false, error: '비밀번호는 최소 6자 이상이어야 합니다.' },
         { status: 400 }
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
     // 이메일 중복 확인
     const existingUser = await AdminUser.findOne({ email });
@@ -80,28 +80,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 비밀번호 해시화
-    const hashedPassword = await hashPassword(password);
-
     // 새 사용자 생성
     const newUser = new AdminUser({
-      email,
       username,
-      password: hashedPassword,
-      role
+      email,
+      password,
+      role: role || 'admin'
     });
 
     await newUser.save();
 
-    // 비밀번호 제외하고 응답
-    const userResponse = {
-      _id: newUser._id,
-      email: newUser.email,
-      username: newUser.username,
-      role: newUser.role,
-      created_at: newUser.created_at,
-      last_login: newUser.last_login
-    };
+    // 비밀번호 제외하고 반환
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
 
     return NextResponse.json({
       success: true,
@@ -141,7 +132,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    await connectDB();
+    await dbConnect();
 
     // 사용자 존재 확인
     const existingUser = await AdminUser.findById(userId);
