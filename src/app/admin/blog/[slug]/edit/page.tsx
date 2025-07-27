@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import TiptapEditorDynamic from '@/components/admin/TiptapEditorDynamic';
-import type { TiptapEditorRef } from '@/components/admin/TiptapEditor';
+import TiptapEditor from '@/components/admin/TiptapEditor';
+import { useToast } from '@/components/Toast';
 
 interface BlogFormData {
   slug: string;
@@ -20,14 +20,15 @@ const EditBlogPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<BlogFormData | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   
-  // 에디터 ref 추가
-  const koEditorRef = useRef<TiptapEditorRef>(null);
-  const enEditorRef = useRef<TiptapEditorRef>(null);
+  // 에디터 ref 추가 (TiptapEditor 사용으로 인해 제거)
+  // const koEditorRef = useRef<TiptapEditorRef>(null);
+  // const enEditorRef = useRef<TiptapEditorRef>(null);
 
   useEffect(() => {
     if (slug) {
@@ -76,7 +77,10 @@ const EditBlogPage: React.FC = () => {
       }
     } catch (err) {
       console.error('[수정 상세] fetchBlogPost 에러:', err);
-      alert('블로그 포스트를 불러오는데 실패했습니다.');
+      addToast({
+        type: 'error',
+        message: '블로그 포스트를 불러오는데 실패했습니다.'
+      });
     } finally {
       setLoading(false);
     }
@@ -126,13 +130,19 @@ const EditBlogPage: React.FC = () => {
 
     // 파일 타입 검증
     if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 업로드 가능합니다.');
+      addToast({
+        type: 'error',
+        message: '이미지 파일만 업로드 가능합니다.'
+      });
       return;
     }
 
     // 파일 크기 검증 (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('파일 크기는 5MB 이하여야 합니다.');
+      addToast({
+        type: 'error',
+        message: '파일 크기는 5MB 이하여야 합니다.'
+      });
       return;
     }
 
@@ -188,12 +198,18 @@ const EditBlogPage: React.FC = () => {
 
     // 유효성 검사
     if (!formData.content.ko.title) {
-      alert('한국어 제목을 입력해주세요.');
+      addToast({
+        type: 'error',
+        message: '한국어 제목을 입력해주세요.'
+      });
       return;
     }
 
     if (!formData.content.ko.body) {
-      alert('한국어 본문을 입력해주세요.');
+      addToast({
+        type: 'error',
+        message: '한국어 본문을 입력해주세요.'
+      });
       return;
     }
 
@@ -210,7 +226,10 @@ const EditBlogPage: React.FC = () => {
           console.log('[썸네일 업로드 성공] URL:', thumbnailUrl);
         } catch (error) {
           console.error('[썸네일 업로드 실패]', error);
-          alert('썸네일 업로드에 실패했습니다.');
+          addToast({
+            type: 'error',
+            message: '썸네일 업로드에 실패했습니다.'
+          });
           setLoading(false);
           return;
         }
@@ -254,30 +273,42 @@ const EditBlogPage: React.FC = () => {
       };
       console.log('[최종 DB 전송 payload]', payload);
 
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/blog/${formData.slug}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include', // 쿠키 기반 인증
         body: JSON.stringify(payload),
       });
       const result = await response.json();
       console.log('[블로그 수정 API 응답]', result);
 
       if (!response.ok) {
-        alert(result.error || '블로그 수정에 실패했습니다.');
+        addToast({
+          type: 'error',
+          message: result.error || '블로그 수정에 실패했습니다.'
+        });
         setLoading(false);
         return;
       }
 
-      alert('블로그가 성공적으로 수정되었습니다!');
-      window.location.href = '/admin/blog';
+      addToast({
+        type: 'success',
+        message: '블로그가 성공적으로 수정되었습니다!'
+      });
+      
+      // 약간의 지연 후 리다이렉트 (토스터가 보이도록)
+      setTimeout(() => {
+        router.push('/admin/blog');
+      }, 1000);
       
     } catch (error) {
       console.error('[블로그 수정 전체 에러]', error);
-      alert('블로그 수정 중 오류가 발생했습니다.');
+      addToast({
+        type: 'error',
+        message: '블로그 수정 중 오류가 발생했습니다.'
+      });
     } finally {
       setLoading(false);
     }
@@ -423,10 +454,9 @@ const EditBlogPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   본문 *
                 </label>
-                <TiptapEditorDynamic
-                  ref={koEditorRef}
+                <TiptapEditor
                   value={formData.content.ko.body}
-                  onChange={(value) => handleContentChange('ko', 'body', value)}
+                  onChange={(value: string) => handleContentChange('ko', 'body', value)}
                   slug={formData.slug}
                   placeholder="한국어 본문을 입력하세요..."
                   images={formData.content.ko.images}
@@ -466,10 +496,9 @@ const EditBlogPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   본문
                 </label>
-                <TiptapEditorDynamic
-                  ref={enEditorRef}
+                <TiptapEditor
                   value={formData.content.en.body}
-                  onChange={(value) => handleContentChange('en', 'body', value)}
+                  onChange={(value: string) => handleContentChange('en', 'body', value)}
                   slug={formData.slug}
                   placeholder="영어 본문을 입력하세요..."
                   images={formData.content.en.images}

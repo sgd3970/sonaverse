@@ -176,9 +176,9 @@ const BlogPreviewModal: React.FC<BlogPreviewModalProps> = ({
                     {/* 태그 */}
                     {tags.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {tags.slice(0, 3).map((tag, index) => (
+                        {tags.slice(0, 3).map((tag) => (
                           <span
-                            key={index}
+                            key={tag}
                             className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                           >
                             {tag}
@@ -236,9 +236,9 @@ const BlogPreviewModal: React.FC<BlogPreviewModalProps> = ({
                     <span className="text-sm text-gray-500">{currentDate}</span>
                     {tags.length > 0 && (
                       <div className="flex gap-2">
-                        {tags.map((tag, index) => (
+                        {tags.map((tag) => (
                           <span
-                            key={index}
+                            key={tag}
                             className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
                           >
                             {tag}

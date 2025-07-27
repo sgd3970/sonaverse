@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../../app/i18n';
+import { useToast } from '../../components/Toast';
 
 const categories = [
   { key: 'service', ko: '서비스 도입 문의', en: 'Service Introduction Inquiry' },
@@ -22,6 +23,7 @@ const categories = [
 
 const InquiryPage: React.FC = () => {
   const { t, i18n } = useTranslation('common');
+  const { addToast } = useToast();
   const [form, setForm] = useState({
     category: '',
     name: '',
@@ -33,6 +35,7 @@ const InquiryPage: React.FC = () => {
     files: [] as File[],
   });
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [loading, setLoading] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const handleCustomFileClick = () => fileInputRef.current?.click();
 
@@ -62,11 +65,113 @@ const InquiryPage: React.FC = () => {
     setForm(prev => ({ ...prev, files: filtered }));
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // 필수 필드 검증
+    if (!form.category || !form.name || !form.phone || !form.email || !form.message) {
+      addToast({
+        type: 'error',
+        message: i18n.language === 'en' ? 'Please fill in all required fields.' : '필수 항목을 모두 입력해주세요.'
+      });
+      return;
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      addToast({
+        type: 'error',
+        message: i18n.language === 'en' ? 'Please enter a valid email address.' : '올바른 이메일 주소를 입력해주세요.'
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 파일 업로드 처리
+      const uploadedFiles = [];
+      for (const file of form.files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'inquiry');
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          uploadedFiles.push(uploadResult.url);
+        }
+      }
+
+      // 문의 제출
+      const inquiryData = {
+        category: form.category,
+        name: form.name,
+        position: form.position,
+        company: form.company,
+        phone: form.phone,
+        email: form.email,
+        message: form.message,
+        attachments: uploadedFiles
+      };
+
+      const response = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(inquiryData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '문의 제출에 실패했습니다.');
+      }
+
+      addToast({
+        type: 'success',
+        message: i18n.language === 'en' ? 'Your inquiry has been submitted successfully!' : '문의가 성공적으로 제출되었습니다!'
+      });
+      
+      // 폼 초기화
+      setForm({
+        category: '',
+        name: '',
+        position: '',
+        company: '',
+        phone: '',
+        email: '',
+        message: '',
+        files: [],
+      });
+      
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+    } catch (error) {
+      console.error('Inquiry submission error:', error);
+      addToast({
+        type: 'error',
+        message: error instanceof Error ? error.message : '문의 제출 중 오류가 발생했습니다.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
       <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8">
         <h1 className="text-3xl md:text-4xl font-bold mb-8 text-center">{t('inquiry', i18n.language === 'en' ? 'Business Inquiry' : '기업 문의')}</h1>
-        <form className="flex flex-col gap-6">
+        
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* 카테고리 */}
           <div>
             <label className="block font-semibold mb-2">{t('inquiry_category', i18n.language === 'en' ? 'Inquiry Category' : '문의 카테고리')} *</label>
@@ -151,8 +256,15 @@ const InquiryPage: React.FC = () => {
             <div className="mt-1 text-xs text-gray-400">{allowedFileTypesText}</div>
           </div>
           {/* 제출 버튼 */}
-          <button type="submit" className="mt-4 bg-[#bda191] text-white px-6 py-3 rounded-lg shadow hover:bg-[#a88a6d] transition-all font-semibold text-lg tracking-wide">
-            {t('submit', i18n.language === 'en' ? 'Submit Inquiry' : '문의하기')}
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="mt-4 bg-[#bda191] text-white px-6 py-3 rounded-lg shadow hover:bg-[#a88a6d] transition-all font-semibold text-lg tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading 
+              ? (i18n.language === 'en' ? 'Submitting...' : '제출 중...') 
+              : t('submit', i18n.language === 'en' ? 'Submit Inquiry' : '문의하기')
+            }
           </button>
         </form>
       </div>

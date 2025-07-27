@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../../app/i18n';
 import Link from 'next/link';
+import { useToast } from '../../components/Toast';
 
 const mockResults = [
   {
@@ -42,21 +43,50 @@ const mockResults = [
 
 const SearchPage: React.FC = () => {
   const { t, i18n } = useTranslation('common');
+  const { addToast } = useToast();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<typeof mockResults>([]);
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 실제 검색 로직은 추후 구현, 현재는 mockResults에서 제목/요약에 포함된 경우만 필터
-    const q = query.trim().toLowerCase();
-    setResults(
-      mockResults.filter(item =>
-        (i18n.language === 'en'
-          ? item.title_en.toLowerCase() + item.subtitle_en.toLowerCase()
-          : item.title_ko + item.subtitle_ko
-        ).includes(q)
-      )
-    );
+    
+    if (!query.trim()) {
+      setResults([]);
+      setSearched(false);
+      return;
+    }
+
+    setLoading(true);
+    setSearched(true);
+
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}&lang=${i18n.language}`);
+      
+      if (!response.ok) {
+        throw new Error('검색에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      setResults(data.results || []);
+      
+      if (data.results.length === 0) {
+        addToast({
+          type: 'info',
+          message: i18n.language === 'en' ? 'No search results found.' : '검색 결과가 없습니다.'
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults([]);
+      addToast({
+        type: 'error',
+        message: i18n.language === 'en' ? 'Search failed. Please try again.' : '검색에 실패했습니다. 다시 시도해주세요.'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,22 +106,38 @@ const SearchPage: React.FC = () => {
           </button>
         </form>
         <div>
-          {results.length === 0 && (
-            <div className="text-gray-400 text-center py-8">{t('no_results', '검색 결과가 없습니다.')}</div>
+          {loading && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">검색 중...</p>
+            </div>
           )}
-          <ul className="space-y-4">
-            {results.map(item => (
-              <li key={item.type + item.slug} className="bg-gray-50 rounded-lg shadow p-4">
-                <div className="text-xs text-gray-500 mb-1">
-                  {t(item.type, item.type)}
-                </div>
-                <Link href={`/${item.type === 'brand_story' ? 'brand-story' : item.type}/${item.slug}`} className="text-lg font-semibold hover:underline">
-                  {i18n.language === 'en' ? item.title_en : item.title_ko}
-                </Link>
-                <div className="text-gray-600 mt-1">{i18n.language === 'en' ? item.subtitle_en : item.subtitle_ko}</div>
-              </li>
-            ))}
-          </ul>
+          
+          {!loading && searched && results.length === 0 && (
+            <div className="text-gray-400 text-center py-8">
+              {i18n.language === 'en' ? 'No search results found.' : '검색 결과가 없습니다.'}
+            </div>
+          )}
+          
+          {!loading && results.length > 0 && (
+            <ul className="space-y-4">
+              {results.map(item => (
+                <li key={item.type + item.slug} className="bg-gray-50 rounded-lg shadow p-4">
+                  <div className="text-xs text-gray-500 mb-1">
+                    {item.type === 'blog' ? (i18n.language === 'en' ? 'Blog' : '블로그') :
+                     item.type === 'product' ? (i18n.language === 'en' ? 'Product' : '제품') :
+                     item.type === 'press' ? (i18n.language === 'en' ? 'Press' : '언론보도') :
+                     item.type === 'brand_story' ? (i18n.language === 'en' ? 'Brand Story' : '브랜드 스토리') :
+                     item.type}
+                  </div>
+                  <Link href={`/${item.type === 'brand_story' ? 'brand-story' : item.type}/${item.slug}`} className="text-lg font-semibold hover:underline">
+                    {i18n.language === 'en' ? item.title_en : item.title_ko}
+                  </Link>
+                  <div className="text-gray-600 mt-1">{i18n.language === 'en' ? item.subtitle_en : item.subtitle_ko}</div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

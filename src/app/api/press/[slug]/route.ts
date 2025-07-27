@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '../../../../lib/db';
 import PressRelease from '../../../../models/PressRelease';
-import { verifyToken } from '../../../../lib/auth';
+import { verifyToken } from '../../../../lib/auth-server';
 
 /**
  * GET: 특정 언론보도 상세 정보 조회

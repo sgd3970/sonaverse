@@ -1,0 +1,47 @@
+
+> sonaverse-homepage@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.4.4
+   - Local:        http://localhost:3000
+   - Network:      http://172.26.143.121:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 60.2s
+ ○ Compiling / ...
+ ✓ Compiled / in 25.1s (614 modules)
+ GET / 200 in 27906ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 4.4s (601 modules)
+ GET / 404 in 5768ms
+ GET / 200 in 505ms
+ GET /people/sujin.png 404 in 749ms
+ GET /people/jimyung.png 404 in 786ms
+ GET /_next/static/css/app/layout.css?v=1753578160466 404 in 651ms
+ GET /people/yoonseok.png 404 in 931ms
+ GET /people/youngseok.png 404 in 904ms
+ GET /people/jooyeol.png 404 in 895ms
+ GET /people/owon.png 404 in 523ms
+ GET /people/junwol.png 404 in 452ms
+ GET /people/jongha.png 404 in 483ms
+ GET /_next/static/chunks/app/page.js 404 in 350ms
+ GET /_next/static/chunks/main-app.js?v=1753578160466 404 in 419ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 377ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 2.3s (177 modules)
+ ○ Compiling /admin/login ...
+ ✓ Compiled /admin/login in 4.3s (670 modules)
+ GET /admin/login?returnUrl=%252Fadmin 200 in 6360ms
+ GET /_next/static/css/app/layout.css?v=1753578173157 404 in 504ms
+ GET /_next/static/chunks/main-app.js?v=1753578173157 404 in 633ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 524ms
+ GET /_next/static/css/app/layout.css?v=1753578173157 404 in 289ms
+ ○ Compiling /_error ...
+ GET /admin/login?returnUrl=%252Fadmin 404 in 2088ms
+ ✓ Compiled /_error in 11.6s (993 modules)
+ GET /admin/login?returnUrl=%252Fadmin 404 in 9113ms
+ GET /_next/static/css/app/layout.css?v=1753578681146 404 in 1455ms
+ GET /_next/static/chunks/main-app.js?v=1753578681146 404 in 1531ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 1486ms
+ GET /_next/static/chunks/app/layout.js 404 in 1472ms

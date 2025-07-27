@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useCallback, useState, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
-import { EditorContent, useEditor, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
+import FloatingToolbar from './FloatingToolbar';
+import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Underline from '@tiptap/extension-underline';
-import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { Color } from '@tiptap/extension-color';
+import Color from '@tiptap/extension-color';
 import FontSize from './FontSize';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
+import TextAlign from '@tiptap/extension-text-align';
 import { Node, Extension } from '@tiptap/core';
 // import BulletList from '@tiptap/extension-bullet-list';
 // import OrderedList from '@tiptap/extension-ordered-list';
@@ -48,6 +49,8 @@ declare module '@tiptap/core' {
 export interface TiptapEditorRef {
   uploadTempImagesToBlob: (slug?: string) => Promise<string>;
   getImages: () => IBlogPostImage[];
+  getEditor: () => any;
+  uploadImageToBlob: (file: File) => Promise<string>;
 }
 
 // 임시 이미지를 blob URL로 생성하는 함수
@@ -427,8 +430,7 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
     if (JSON.stringify(images) !== JSON.stringify(imageMetadata)) {
       onImagesChange?.(imageMetadata);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageMetadata]);
+  }, [imageMetadata, images]);
 
   // 이미지 메타데이터 가져오기 함수
   const getImages = useCallback(() => imageMetadata, [imageMetadata]);
@@ -573,37 +575,39 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
       
     } catch (error) {
       console.error('이미지 업로드 오류:', error);
-      alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+      // 토스터는 상위 컴포넌트에서 처리하므로 여기서는 로그만 남김
     }
   }, [editor, addImageMetadata]);
 
+  // 단일 이미지 업로드 함수 (외부에서 호출용)
+  const uploadImageToBlob = useCallback(async (file: File, slug?: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', 'editor');
+    
+    if (slug) {
+      const timestamp = Date.now();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const customFilename = `${slug}_content_${timestamp}`;
+      formData.append('filename', customFilename);
+    }
+
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || '이미지 업로드 실패');
+    }
+    
+    const data = await res.json();
+    return data.url as string;
+  }, []);
+
   // 실제 blob 업로드 함수 (외부에서 호출용)
   const uploadTempImagesToBlob = useCallback(async (slug?: string) => {
-    const uploadImageToBlob = async (file: File, slug?: string) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'editor');
-      
-      if (slug) {
-        const timestamp = Date.now();
-        const ext = file.name.split('.').pop() || 'jpg';
-        const customFilename = `${slug}_content_${timestamp}`;
-        formData.append('filename', customFilename);
-      }
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || '이미지 업로드 실패');
-      }
-      
-      const data = await res.json();
-      return data.url as string;
-    };
 
     if (!editor || tempFiles.size === 0) return editor?.getHTML() || '';
 
@@ -640,8 +644,10 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
   // ref로 함수 노출
   useImperativeHandle(ref, () => ({
     uploadTempImagesToBlob,
-    getImages
-  }), [uploadTempImagesToBlob, getImages]);
+    getImages,
+    getEditor: () => editor,
+    uploadImageToBlob
+  }), [uploadTempImagesToBlob, getImages, editor, uploadImageToBlob]);
 
 
   if (!editor) {
@@ -805,6 +811,8 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
       <div className="min-h-[500px] relative p-4">
         <EditorContent editor={editor} />
       </div>
+      
+      {/* 플로팅 툴바는 각 페이지에서 개별적으로 관리 */}
     </div>
   );
 });

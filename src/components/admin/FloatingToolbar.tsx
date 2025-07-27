@@ -6,11 +6,13 @@ import { Editor } from '@tiptap/react';
 interface FloatingToolbarProps {
   editor: Editor | null;
   onImageUpload?: () => void;
+  tiptapRef?: any;
 }
 
 const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ 
   editor, 
-  onImageUpload 
+  onImageUpload,
+  tiptapRef
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 20 });
@@ -227,7 +229,25 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
           <div className="text-[10px] text-gray-400 mb-0.5 mt-1">기타</div>
           <div className="flex gap-0.5 mb-0.5">
             <button onClick={handleAddLink} className={`px-1 py-0.5 rounded text-xs ${editor.isActive('link') ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`} title="링크">🔗</button>
-            <button onClick={onImageUpload} className="px-1 py-0.5 rounded text-xs bg-green-100 hover:bg-green-200" title="이미지">🖼️</button>
+            <button onClick={() => {
+              if (editor && tiptapRef?.current?.uploadImageToBlob) {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) {
+                    try {
+                      const imageUrl = await tiptapRef.current.uploadImageToBlob(file);
+                      editor.chain().focus().setImage({ src: imageUrl }).run();
+                    } catch (error) {
+                      console.error('이미지 업로드 실패:', error);
+                    }
+                  }
+                };
+                input.click();
+              }
+            }} className="px-1 py-0.5 rounded text-xs bg-green-100 hover:bg-green-200" title="이미지">🖼️</button>
             <button onClick={() => editor.chain().focus().insertClearBreak().run()} className="px-1 py-0.5 rounded text-xs bg-purple-100 hover:bg-purple-200" title="줄바꿈">↩️</button>
             <button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className="px-1 py-0.5 rounded text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50" title="실행 취소">↩️</button>
             <button onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} className="px-1 py-0.5 rounded text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50" title="재실행">↪️</button>

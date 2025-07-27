@@ -2,54 +2,68 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useToast } from '../../components/Toast';
 
 interface DashboardStats {
   totalPress: number;
   totalBlog: number;
   totalInquiries: number;
-  totalProducts: number;
+  totalBrandStories: number;
+  totalVisitors: number;
+  totalPageViews: number;
+  recentPosts: Array<{
+    type: string;
+    title: string;
+    slug: string;
+    created_at: string;
+  }>;
 }
 
 const AdminDashboard: React.FC = () => {
+  const { addToast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
     totalPress: 0,
     totalBlog: 0,
     totalInquiries: 0,
-    totalProducts: 0
+    totalBrandStories: 0,
+    totalVisitors: 0,
+    totalPageViews: 0,
+    recentPosts: []
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 임시로 false로 설정
 
   useEffect(() => {
+    console.log('[대시보드] useEffect 실행됨');
     fetchStats();
   }, []);
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      if (!token) return;
-
-      // 각 API에서 통계 데이터 가져오기
-      const [pressRes, blogRes, inquiriesRes, productsRes] = await Promise.all([
-        fetch('/api/press?active=false'),
-        fetch('/api/blog'),
-        fetch('/api/inquiries'),
-        fetch('/api/products')
-      ]);
-
-      const pressData = await pressRes.json();
-      const blogData = await blogRes.json();
-      const inquiriesData = await inquiriesRes.json();
-      const productsData = await productsRes.json();
-
-      setStats({
-        totalPress: pressData.total || 0,
-        totalBlog: blogData.total || 0,
-        totalInquiries: inquiriesData.total || 0,
-        totalProducts: productsData.total || 0
+      console.log('[대시보드] fetchStats 시작');
+      setLoading(true);
+      const res = await fetch('/api/admin/stats', {
+        credentials: 'include',
       });
+      
+      console.log('[대시보드] API 응답 상태:', res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('API Response:', res.status, errorText);
+        throw new Error(`Failed to fetch stats: ${res.status} ${errorText}`);
+      }
+      
+      const data = await res.json();
+      console.log('[대시보드] Stats data:', data);
+      setStats(data);
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('[대시보드] Error fetching stats:', error);
+      addToast({
+        type: 'error',
+        message: '통계 데이터를 불러오는데 실패했습니다.'
+      });
     } finally {
+      console.log('[대시보드] fetchStats 완료, loading false로 설정');
       setLoading(false);
     }
   };
@@ -77,11 +91,11 @@ const AdminDashboard: React.FC = () => {
       color: 'bg-yellow-500'
     },
     {
-      title: '사이트 설정',
-      description: '사이트 전역 설정을 관리합니다',
-      href: '/admin/settings',
-      icon: '⚙️',
-      color: 'bg-purple-500'
+      title: '통계 보기',
+      description: '상세한 통계를 확인합니다',
+      href: '/admin/analytics',
+      icon: '📈',
+      color: 'bg-indigo-500'
     }
   ];
 
@@ -89,8 +103,8 @@ const AdminDashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">통계를 불러오는 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
+          <p className="mt-4 text-gray-400">통계를 불러오는 중...</p>
         </div>
       </div>
     );
@@ -99,89 +113,128 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
-        <p className="mt-2 text-gray-600">(주)소나버스 관리자 시스템에 오신 것을 환영합니다.</p>
+        <h1 className="text-3xl font-bold text-white">관리자 대시보드</h1>
+        <p className="mt-2 text-gray-300">(주)소나버스 관리자 시스템에 오신 것을 환영합니다.</p>
       </div>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <Link href="/admin/press" className="bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-700">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
               <span className="text-2xl">📰</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">언론보도</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalPress}</p>
+              <p className="text-sm font-medium text-gray-400">언론보도</p>
+              <p className="text-2xl font-bold text-white">{stats.totalPress}</p>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <Link href="/admin/blog" className="bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-700">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
               <span className="text-2xl">📝</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">블로그</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalBlog}</p>
+              <p className="text-sm font-medium text-gray-400">블로그</p>
+              <p className="text-2xl font-bold text-white">{stats.totalBlog}</p>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <Link href="/admin/brand-story" className="bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-700">
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <span className="text-2xl">🏢</span>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-400">브랜드 스토리</p>
+              <p className="text-2xl font-bold text-white">{stats.totalBrandStories}</p>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/admin/inquiries" className="bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-700">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <span className="text-2xl">📧</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">문의</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalInquiries}</p>
+              <p className="text-sm font-medium text-gray-400">문의</p>
+              <p className="text-2xl font-bold text-white">{stats.totalInquiries}</p>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <span className="text-2xl">🛍️</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">제품</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
-            </div>
-          </div>
-        </div>
+        </Link>
       </div>
 
       {/* 빠른 액션 */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">빠른 액션</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">빠른 액션</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action, index) => (
+          {quickActions.map((action) => (
             <Link
-              key={index}
+              key={action.href}
               href={action.href}
-              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+              className="bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow border border-gray-700"
             >
               <div className="flex items-center mb-3">
-                <div className={`p-2 rounded-lg ${action.color} text-white`}>
+                <div className="p-2 rounded-lg bg-yellow-400 text-black">
                   <span className="text-xl">{action.icon}</span>
                 </div>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-              <p className="text-sm text-gray-600">{action.description}</p>
+              <h3 className="font-semibold text-white mb-1">{action.title}</h3>
+              <p className="text-sm text-gray-400">{action.description}</p>
             </Link>
           ))}
         </div>
       </div>
 
-      {/* 최근 활동 */}
+      {/* 최근 업로드된 게시물 */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">최근 활동</h2>
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <p className="text-gray-600">최근 활동 내역이 여기에 표시됩니다.</p>
+        <h2 className="text-xl font-semibold text-white mb-4">최근 업로드된 게시물</h2>
+        <div className="bg-gray-800 rounded-lg shadow overflow-hidden border border-gray-700">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-700">
+              <thead className="bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">유형</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">제목</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">업로드 날짜</th>
+                </tr>
+              </thead>
+              <tbody className="bg-gray-800 divide-y divide-gray-700">
+                {stats.recentPosts.length > 0 ? (
+                  stats.recentPosts.slice(0, 5).map((post, index) => (
+                    <tr key={index} className="hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          post.type === 'blog' ? 'bg-green-100 text-green-800' :
+                          post.type === 'press' ? 'bg-blue-100 text-blue-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {post.type === 'blog' ? '블로그' :
+                           post.type === 'press' ? '언론보도' :
+                           '브랜드 스토리'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {post.title}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-12 text-center text-gray-500">
+                      최근 업로드된 게시물이 없습니다.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -3,13 +3,14 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import TiptapEditorDynamic from '@/components/admin/TiptapEditorDynamic';
+import TiptapEditor, { TiptapEditorRef } from '@/components/admin/TiptapEditor';
 import BlogPreviewModal from '@/components/admin/BlogPreviewModal';
 import FloatingToolbar from '@/components/admin/FloatingToolbar';
-import type { TiptapEditorRef } from '@/components/admin/TiptapEditor';
+import { useToast } from '@/components/Toast';
 
 const NewBlogPage: React.FC = () => {
   const router = useRouter();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     slug: '',
@@ -110,7 +111,10 @@ const NewBlogPage: React.FC = () => {
     e.preventDefault();
     
     if (!formData.slug.trim() || !formData.content.ko.title.trim() || !formData.content.en.title.trim()) {
-      alert('필수 필드를 모두 입력해주세요.');
+      addToast({
+        type: 'error',
+        message: '필수 필드를 모두 입력해주세요.'
+      });
       return;
     }
 
@@ -127,7 +131,10 @@ const NewBlogPage: React.FC = () => {
           console.log('[썸네일 업로드 성공] URL:', thumbnailUrl);
         } catch (error) {
           console.error('[썸네일 업로드 실패]', error);
-          alert('썸네일 업로드에 실패했습니다.');
+          addToast({
+            type: 'error',
+            message: '썸네일 업로드에 실패했습니다.'
+          });
           setLoading(false);
           return;
         }
@@ -173,29 +180,41 @@ const NewBlogPage: React.FC = () => {
       console.log('[최종 DB 전송 payload]', payload);
 
       // 실제 API 요청
-      const token = localStorage.getItem('adminToken');
       const response = await fetch('/api/blog', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include', // 쿠키 기반 인증
         body: JSON.stringify(payload),
       });
       const result = await response.json();
       console.log('[블로그 생성 API 응답]', result);
 
       if (!response.ok) {
-        alert(result.error || '블로그 생성에 실패했습니다.');
+        addToast({
+          type: 'error',
+          message: result.error || '블로그 생성에 실패했습니다.'
+        });
         setLoading(false);
         return;
       }
 
-      alert('블로그가 성공적으로 생성되었습니다!');
-      window.location.href = '/admin/blog';
+      addToast({
+        type: 'success',
+        message: '블로그가 성공적으로 생성되었습니다!'
+      });
+      
+      // 약간의 지연 후 리다이렉트 (토스터가 보이도록)
+      setTimeout(() => {
+        router.push('/admin/blog');
+      }, 1000);
     } catch (error) {
       console.error('[블로그 생성 전체 에러]', error);
-      alert('블로그 생성 중 오류가 발생했습니다.');
+      addToast({
+        type: 'error',
+        message: '블로그 생성 중 오류가 발생했습니다.'
+      });
     } finally {
       setLoading(false);
     }
@@ -307,15 +326,15 @@ const NewBlogPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   본문 *
                 </label>
-                <TiptapEditorDynamic
+                <TiptapEditor
                   ref={koEditorRef}
                   value={formData.content.ko.body}
-                  onChange={(value) => handleContentChange('ko', 'body', value)}
+                  onChange={(value: string) => handleContentChange('ko', 'body', value)}
                   slug={formData.slug}
                   placeholder="한국어 본문을 입력하세요..."
                   images={formData.content.ko.images}
                   onImagesChange={(images) => handleImagesChange('ko', images)}
-                  onEditorFocus={(editor) => setActiveEditor(editor)}
+                  onEditorFocus={() => setActiveEditor(koEditorRef.current?.getEditor())}
                 />
               </div>
             </div>
@@ -351,15 +370,15 @@ const NewBlogPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   본문 *
                 </label>
-                <TiptapEditorDynamic
+                <TiptapEditor
                   ref={enEditorRef}
                   value={formData.content.en.body}
-                  onChange={(value) => handleContentChange('en', 'body', value)}
+                  onChange={(value: string) => handleContentChange('en', 'body', value)}
                   slug={formData.slug}
                   placeholder="영어 본문을 입력하세요..."
                   images={formData.content.en.images}
                   onImagesChange={(images) => handleImagesChange('en', images)}
-                  onEditorFocus={(editor) => setActiveEditor(editor)}
+                  onEditorFocus={() => setActiveEditor(enEditorRef.current?.getEditor())}
                 />
               </div>
             </div>
@@ -403,38 +422,12 @@ const NewBlogPage: React.FC = () => {
         />
 
         {/* 플로팅 툴바 */}
-        <FloatingToolbar
-          editor={activeEditor}
-          onImageUpload={() => {
-            // 현재 활성 에디터에서 이미지 업로드 실행
-            if (activeEditor) {
-              // TiptapEditor의 handleImageUpload 메서드를 직접 호출할 수 없으므로
-              // 에디터에 포커스를 주고 임시로 이미지 업로드 트리거
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.multiple = true;
-              
-              input.onchange = async () => {
-                if (input.files) {
-                  const files = Array.from(input.files);
-                  for (const file of files) {
-                    const tempUrl = URL.createObjectURL(file);
-                    activeEditor.chain().focus().insertContent({
-                      type: 'image',
-                      attrs: {
-                        src: tempUrl,
-                        alt: file.name
-                      }
-                    }).run();
-                  }
-                }
-              };
-              
-              input.click();
-            }
-          }}
-        />
+        {activeEditor && (
+          <FloatingToolbar 
+            editor={activeEditor}
+            tiptapRef={activeEditor === koEditorRef.current?.getEditor() ? koEditorRef : enEditorRef}
+          />
+        )}
       </div>
     </div>
   );

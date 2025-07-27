@@ -35,7 +35,6 @@ const PressPage: React.FC = () => {
 
   useEffect(() => {
     fetchPress(1, '');
-    // eslint-disable-next-line
   }, [i18n.language]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
