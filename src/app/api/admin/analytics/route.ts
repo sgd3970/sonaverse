@@ -256,31 +256,4 @@ async function calculateContentStats(period: string, now: Date) {
     press: pressTrend,
     brandStory: brandStoryTrend
   };
-}
-
-// 검색 키워드를 추가하는 함수 (검색 API에서 호출)
-export async function addSearchKeyword(keyword: string) {
-  try {
-    await dbConnect();
-    
-    // 기존 키워드 찾기
-    const existingKeyword = await SearchKeyword.findOne({ keyword });
-    
-    if (existingKeyword) {
-      // 기존 키워드 업데이트
-      existingKeyword.count += 1;
-      existingKeyword.lastUsed = new Date();
-      await existingKeyword.save();
-    } else {
-      // 새 키워드 생성
-      const newKeyword = new SearchKeyword({
-        keyword,
-        count: 1,
-        lastUsed: new Date()
-      });
-      await newKeyword.save();
-    }
-  } catch (error) {
-    console.error('Error adding search keyword:', error);
-  }
 } 
