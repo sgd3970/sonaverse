@@ -4,16 +4,17 @@ import BrandStory from '../../../../models/BrandStory';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const { searchParams } = new URL(request.url);
     const lang = searchParams.get('lang') || 'ko';
 
     await dbConnect();
 
     const brandStory = await BrandStory.findOne({ 
-      slug: params.slug,
+      slug: slug,
       is_active: true 
     });
 
@@ -39,9 +40,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const body = await request.json();
     const { title, excerpt, content, image, is_active } = body;
 
@@ -55,7 +57,7 @@ export async function PUT(
     await dbConnect();
 
     const brandStory = await BrandStory.findOneAndUpdate(
-      { slug: params.slug },
+      { slug: slug },
       {
         title,
         excerpt,
@@ -89,12 +91,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     await dbConnect();
 
-    const brandStory = await BrandStory.findOneAndDelete({ slug: params.slug });
+    const brandStory = await BrandStory.findOneAndDelete({ slug: slug });
 
     if (!brandStory) {
       return NextResponse.json(
