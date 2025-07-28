@@ -31,7 +31,7 @@ const AdminPressPage: React.FC = () => {
   const fetchPressList = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/press?active=false', {
+      const res = await fetch('/api/press', {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to fetch press list');

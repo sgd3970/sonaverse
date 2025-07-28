@@ -17,9 +17,13 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = 10;
     const search = searchParams.get('search')?.trim();
-    const isActive = searchParams.get('active') !== 'false';
+    const active = searchParams.get('active');
 
-    const query: any = isActive ? { is_active: true } : {};
+    // 관리자 페이지용 쿼리 (active 파라미터가 있으면 해당 조건으로 필터링)
+    let query: any = {};
+    if (active !== null) {
+      query = { is_active: active === 'true' };
+    }
     
     // 검색 조건 추가 (제목/언론사명/본문)
     if (search) {
@@ -33,19 +37,19 @@ export async function GET(request: NextRequest) {
     const total = await PressRelease.countDocuments(query);
     const totalPages = Math.ceil(total / pageSize);
     const pressReleases = await PressRelease.find(query)
-      .sort({ published_date: -1 })
+      .sort({ created_at: -1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize);
     
-    // 언어별 데이터만 추출
+    // 관리자 페이지용 응답 구조
     const result = pressReleases.map((item: any) => ({
+      _id: item._id,
       slug: item.slug,
-      published_date: item.published_date,
-      press_name: item.press_name[lang] || item.press_name['ko'],
-      title: item.content[lang]?.title || item.content['ko']?.title,
-      summary: item.content[lang]?.body?.slice(0, 120) || '',
-      external_link: item.content[lang]?.external_link || '',
+      press_name: item.press_name,
+      content: item.content,
       is_active: item.is_active,
+      created_at: item.created_at,
+      last_updated: item.updated_at || item.created_at,
     }));
     
     return NextResponse.json({
