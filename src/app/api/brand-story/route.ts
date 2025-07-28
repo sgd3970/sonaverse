@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, content, youtube_url, tags, updated_by } = body;
+    const { slug, content, youtube_url, tags, updated_by, is_published } = body;
 
     if (!slug || !content) {
       return NextResponse.json(
@@ -40,13 +40,22 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
+    // 기존 데이터 확인
+    const existingStory = await BrandStory.findOne({ slug });
+    if (existingStory) {
+      return NextResponse.json(
+        { success: false, error: '이미 존재하는 슬러그입니다.' },
+        { status: 400 }
+      );
+    }
+
     const brandStory = new BrandStory({
       slug,
       content,
       youtube_url,
       tags: tags || [],
       updated_by: updated_by || 'admin',
-      is_published: true
+      is_published: is_published !== undefined ? is_published : true
     });
 
     await brandStory.save();

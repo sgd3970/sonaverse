@@ -104,6 +104,7 @@ const AdminBrandStoryPage: React.FC = () => {
           youtube_url: 'https://www.youtube.com/embed/zNEH586xSts?si=q34J5DB535a1JCmc',
           tags: ['브랜드스토리', '소나버스', '시작'],
           updated_by: 'admin',
+          is_published: true,
           content: {
             ko: {
               title: '소나버스의 시작',
@@ -148,6 +149,7 @@ const AdminBrandStoryPage: React.FC = () => {
           youtube_url: 'https://www.youtube.com/embed/zNEH586xSts?si=q34J5DB535a1JCmc',
           tags: ['혁신', '연구개발', '기술'],
           updated_by: 'admin',
+          is_published: true,
           content: {
             ko: {
               title: '혁신의 여정',
@@ -192,6 +194,7 @@ const AdminBrandStoryPage: React.FC = () => {
           youtube_url: 'https://www.youtube.com/embed/zNEH586xSts?si=q34J5DB535a1JCmc',
           tags: ['품질', '안전', '신뢰'],
           updated_by: 'admin',
+          is_published: true,
           content: {
             ko: {
               title: '품질에 대한 약속',
@@ -236,6 +239,7 @@ const AdminBrandStoryPage: React.FC = () => {
           youtube_url: 'https://www.youtube.com/embed/zNEH586xSts?si=q34J5DB535a1JCmc',
           tags: ['글로벌', '비전', '미래'],
           updated_by: 'admin',
+          is_published: true,
           content: {
             ko: {
               title: '글로벌 비전',
@@ -280,6 +284,7 @@ const AdminBrandStoryPage: React.FC = () => {
           youtube_url: 'https://www.youtube.com/embed/zNEH586xSts?si=q34J5DB535a1JCmc',
           tags: ['지속가능', '환경', '미래'],
           updated_by: 'admin',
+          is_published: true,
           content: {
             ko: {
               title: '지속가능한 미래',
@@ -333,7 +338,8 @@ const AdminBrandStoryPage: React.FC = () => {
           });
           
           if (!res.ok) {
-            throw new Error(`Failed to add ${story.slug}`);
+            const errorData = await res.json();
+            throw new Error(`Failed to add ${story.slug}: ${errorData.error || 'Unknown error'}`);
           }
         } catch (error) {
           console.error(`Error adding ${story.slug}:`, error);
