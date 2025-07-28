@@ -6,16 +6,23 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const lang = searchParams.get('lang') || 'ko';
+    const published = searchParams.get('published');
 
     await dbConnect();
 
-    const brandStories = await BrandStory.find({ is_published: true })
+    // 관리자 페이지용 쿼리 (published 파라미터가 있으면 해당 조건으로 필터링)
+    let query = {};
+    if (published !== null) {
+      query = { is_published: published === 'true' };
+    }
+
+    const brandStories = await BrandStory.find(query)
       .sort({ created_at: -1 })
-      .select(`content.${lang} slug created_at`);
+      .select('content slug created_at is_published tags youtube_url');
 
     return NextResponse.json({
       success: true,
-      brandStories
+      results: brandStories
     });
   } catch (error) {
     console.error('GET /api/brand-story error:', error);

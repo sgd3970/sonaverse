@@ -36,7 +36,7 @@ const AdminBrandStoryPage: React.FC = () => {
   const fetchBrandStories = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/brand-story?published=false');
+      const res = await fetch('/api/brand-story');
       if (!res.ok) throw new Error('Failed to fetch brand stories');
       const data = await res.json();
       setBrandStories(data.results || []);
