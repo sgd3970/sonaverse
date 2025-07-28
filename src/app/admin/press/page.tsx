@@ -7,7 +7,6 @@ import { useToast } from '../../../components/Toast';
 interface PressItem {
   _id: string;
   slug: string;
-  published_date: string;
   press_name: Record<string, string>;
   content: Record<string, {
     title: string;
@@ -52,19 +51,32 @@ const AdminPressPage: React.FC = () => {
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
+      // 즉시 로컬 상태 업데이트
+      setPressList(prev => prev.map(item => 
+        item._id === id 
+          ? { ...item, is_active: !currentStatus }
+          : item
+      ));
+
       const res = await fetch(`/api/press/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // 쿠키 기반 인증
+        credentials: 'include',
         body: JSON.stringify({ is_active: !currentStatus }),
       });
       
-      if (!res.ok) throw new Error('Failed to update press status');
+      if (!res.ok) {
+        // API 실패 시 원래 상태로 되돌리기
+        setPressList(prev => prev.map(item => 
+          item._id === id 
+            ? { ...item, is_active: currentStatus }
+            : item
+        ));
+        throw new Error('Failed to update press status');
+      }
       
-      // 목록 새로고침
-      fetchPressList();
       addToast({
         type: 'success',
         message: `언론보도가 ${!currentStatus ? '활성화' : '비활성화'}되었습니다.`
@@ -146,7 +158,7 @@ const AdminPressPage: React.FC = () => {
                 언론사
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                발행일
+                작성일
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 상태
@@ -169,7 +181,7 @@ const AdminPressPage: React.FC = () => {
                   {item.press_name?.ko || item.press_name?.en || '언론사명 없음'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {new Date(item.published_date).toLocaleDateString()}
+                  {new Date(item.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <select

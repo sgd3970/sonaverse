@@ -54,12 +54,31 @@ const AdminBrandStoryPage: React.FC = () => {
 
   const handleTogglePublished = async (id: string, currentStatus: boolean) => {
     try {
-      // 임시로 로컬 상태만 업데이트 (API 연결 문제 해결 전까지)
+      // 즉시 로컬 상태 업데이트
       setBrandStories(prev => prev.map(story => 
         story._id === id 
           ? { ...story, is_published: !currentStatus }
           : story
       ));
+
+      const res = await fetch(`/api/brand-story/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ is_published: !currentStatus }),
+      });
+      
+      if (!res.ok) {
+        // API 실패 시 원래 상태로 되돌리기
+        setBrandStories(prev => prev.map(story => 
+          story._id === id 
+            ? { ...story, is_published: currentStatus }
+            : story
+        ));
+        throw new Error('Failed to update brand story status');
+      }
       
       addToast({
         type: 'success',
@@ -418,7 +437,7 @@ const AdminBrandStoryPage: React.FC = () => {
                 제목
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                유튜브
+                구분
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 작성일
@@ -443,10 +462,12 @@ const AdminBrandStoryPage: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {story.youtube_url ? (
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                      YouTube
+                      유튜브
                     </span>
                   ) : (
-                    <span className="text-gray-400">없음</span>
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      블로그
+                    </span>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">

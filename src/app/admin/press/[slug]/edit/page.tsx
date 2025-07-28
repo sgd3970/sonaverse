@@ -8,7 +8,6 @@ import { useToast } from '@/components/Toast';
 
 interface PressFormData {
   slug: string;
-  published_date: string;
   press_name: {
     ko: string;
     en: string;
@@ -55,7 +54,6 @@ const EditPressPage: React.FC = () => {
       
       setFormData({
         slug: data.slug,
-        published_date: data.published_date || '',
         press_name: {
           ko: data.press_name?.ko || '',
           en: data.press_name?.en || ''
@@ -126,7 +124,6 @@ const EditPressPage: React.FC = () => {
     try {
       const payload = {
         slug: formData.slug,
-        published_date: formData.published_date,
         press_name: formData.press_name,
         content: formData.content,
         is_active: formData.is_active

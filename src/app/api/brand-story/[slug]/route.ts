@@ -8,15 +8,10 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const { searchParams } = new URL(request.url);
-    const lang = searchParams.get('lang') || 'ko';
 
     await dbConnect();
 
-    const brandStory = await BrandStory.findOne({ 
-      slug: slug,
-      is_active: true 
-    });
+    const brandStory = await BrandStory.findOne({ slug: slug });
 
     if (!brandStory) {
       return NextResponse.json(
@@ -27,7 +22,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      brandStory
+      ...brandStory.toObject()
     });
   } catch (error) {
     console.error('GET /api/brand-story/[slug] error:', error);
@@ -45,11 +40,11 @@ export async function PUT(
   try {
     const { slug } = await params;
     const body = await request.json();
-    const { title, excerpt, content, image, is_active } = body;
+    const { content, youtube_url, tags, is_published } = body;
 
-    if (!title || !content) {
+    if (!content) {
       return NextResponse.json(
-        { success: false, error: '제목과 내용이 필요합니다.' },
+        { success: false, error: '내용이 필요합니다.' },
         { status: 400 }
       );
     }
@@ -59,11 +54,11 @@ export async function PUT(
     const brandStory = await BrandStory.findOneAndUpdate(
       { slug: slug },
       {
-        title,
-        excerpt,
         content,
-        image,
-        is_active: is_active !== undefined ? is_active : true
+        youtube_url,
+        tags: tags || [],
+        is_published: is_published !== undefined ? is_published : true,
+        updated_by: 'admin'
       },
       { new: true }
     );

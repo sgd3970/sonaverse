@@ -55,19 +55,32 @@ const AdminBlogPage: React.FC = () => {
 
   const handleTogglePublished = async (id: string, currentStatus: boolean) => {
     try {
+      // 즉시 로컬 상태 업데이트
+      setBlogPosts(prev => prev.map(post => 
+        post._id === id 
+          ? { ...post, is_published: !currentStatus }
+          : post
+      ));
+
       const res = await fetch(`/api/blog/id/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // 쿠키 기반 인증
+        credentials: 'include',
         body: JSON.stringify({ is_published: !currentStatus }),
       });
       
-      if (!res.ok) throw new Error('Failed to update blog post status');
+      if (!res.ok) {
+        // API 실패 시 원래 상태로 되돌리기
+        setBlogPosts(prev => prev.map(post => 
+          post._id === id 
+            ? { ...post, is_published: currentStatus }
+            : post
+        ));
+        throw new Error('Failed to update blog post status');
+      }
       
-      // 목록 새로고침
-      fetchBlogPosts();
       addToast({
         type: 'success',
         message: `블로그 포스트가 ${!currentStatus ? '공개' : '비공개'}로 변경되었습니다.`
