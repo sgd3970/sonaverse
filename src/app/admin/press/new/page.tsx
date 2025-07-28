@@ -8,17 +8,28 @@ import PressPreviewModal from '@/components/admin/PressPreviewModal';
 import FloatingToolbar from '@/components/admin/FloatingToolbar';
 import { useToast } from '@/components/Toast';
 
+interface IBlogPostImage {
+  src: string;
+  alt: string;
+  alignment: 'left' | 'center' | 'right' | 'full';
+  displaysize: number;
+  originalWidth: number;
+  originalHeight: number;
+  uploadAt: Date;
+  file?: File;
+}
+
 const NewPressPage: React.FC = () => {
   const router = useRouter();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     slug: '',
-    published_date: '',
     press_name: { ko: '', en: '' },
+    external_link: '',
     content: {
-      ko: { title: '', subtitle: '', body: '', external_link: '', thumbnail_url: '', images: [] },
-      en: { title: '', subtitle: '', body: '', external_link: '', thumbnail_url: '', images: [] }
+      ko: { title: '', subtitle: '', body: '', thumbnail_url: '', images: [] as IBlogPostImage[] },
+      en: { title: '', subtitle: '', body: '', thumbnail_url: '', images: [] as IBlogPostImage[] }
     },
     tags: '',
     is_active: true
@@ -66,7 +77,7 @@ const NewPressPage: React.FC = () => {
   };
 
   // 이미지 메타데이터 변경 핸들러
-  const handleImagesChange = (lang: string, images: any[]) => {
+  const handleImagesChange = (lang: string, images: IBlogPostImage[]) => {
     setFormData(prev => ({
       ...prev,
       content: {
@@ -96,94 +107,136 @@ const NewPressPage: React.FC = () => {
   const uploadThumbnail = async (): Promise<string> => {
     if (!thumbnailFile) return '';
 
-    const formData = new FormData();
-    formData.append('file', thumbnailFile);
-    formData.append('type', 'thumbnail');
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', thumbnailFile);
+    uploadFormData.append('folder', `press/${formData.slug}`);
 
-    const res = await fetch('/api/upload', {
+    const response = await fetch('/api/upload', {
       method: 'POST',
-      body: formData,
+      body: uploadFormData,
     });
 
-    if (!res.ok) throw new Error('썸네일 업로드 실패');
-    const data = await res.json();
+    if (!response.ok) {
+      throw new Error('썸네일 업로드 실패');
+    }
+
+    const data = await response.json();
     return data.url;
   };
 
-  // 에디터의 HTML 콘텐츠 가져오기 (TiptapEditor 사용으로 인해 직접 접근)
   const getEditorContent = (lang: string) => {
-    return formData.content[lang as keyof typeof formData.content].body || '';
+    return formData.content[lang as keyof typeof formData.content]?.body || '';
   };
 
-  // 슬러그 자동 생성
   const generateSlug = (title: string) => {
     return title
       .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .substring(0, 50);
+      .replace(/[^a-z0-9가-힣]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.slug || !formData.published_date) {
-      addToast({
-        type: 'error',
-        message: '필수 항목을 입력해주세요.'
-      });
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
-
       // 썸네일 업로드
-      let thumbnailUrl = '';
-      if (thumbnailFile) {
-        thumbnailUrl = await uploadThumbnail();
+      const thumbnailUrl = await uploadThumbnail();
+
+      // 본문 이미지 업로드 및 HTML 업데이트
+      let updatedKoBody = formData.content.ko.body;
+      let updatedEnBody = formData.content.en.body;
+
+      // 한국어 본문 이미지 업로드
+      if (formData.content.ko.images && formData.content.ko.images.length > 0) {
+        for (const image of formData.content.ko.images) {
+          if (image.file) {
+            const imageFormData = new FormData();
+            imageFormData.append('file', image.file);
+            imageFormData.append('folder', `press/${formData.slug}/ko`);
+
+            const imageResponse = await fetch('/api/upload', {
+              method: 'POST',
+              body: imageFormData,
+            });
+
+            if (imageResponse.ok) {
+              const imageData = await imageResponse.json();
+              updatedKoBody = updatedKoBody.replace(
+                `src="${image.src}"`,
+                `src="${imageData.url}"`
+              );
+            }
+          }
+        }
       }
 
-      // 에디터에서 HTML 콘텐츠 가져오기
-      const koBody = getEditorContent('ko');
-      const enBody = getEditorContent('en');
+      // 영어 본문 이미지 업로드
+      if (formData.content.en.images && formData.content.en.images.length > 0) {
+        for (const image of formData.content.en.images) {
+          if (image.file) {
+            const imageFormData = new FormData();
+            imageFormData.append('file', image.file);
+            imageFormData.append('folder', `press/${formData.slug}/en`);
 
-      const submitData = {
-        ...formData,
+            const imageResponse = await fetch('/api/upload', {
+              method: 'POST',
+              body: imageFormData,
+            });
+
+            if (imageResponse.ok) {
+              const imageData = await imageResponse.json();
+              updatedEnBody = updatedEnBody.replace(
+                `src="${image.src}"`,
+                `src="${imageData.url}"`
+              );
+            }
+          }
+        }
+      }
+
+      // 태그 파싱
+      const tags = formData.tags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+
+      const payload = {
+        slug: formData.slug,
+        press_name: formData.press_name,
+        external_link: formData.external_link,
         content: {
           ko: {
             ...formData.content.ko,
-            body: koBody,
+            body: updatedKoBody,
             thumbnail_url: thumbnailUrl
           },
           en: {
             ...formData.content.en,
-            body: enBody,
+            body: updatedEnBody,
             thumbnail_url: thumbnailUrl
           }
         },
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        updated_by: 'admin' // 실제로는 로그인된 사용자 ID를 사용해야 함
+        tags,
+        is_active: formData.is_active
       };
 
-      const res = await fetch('/api/press', {
+      const response = await fetch('/api/press', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
         },
-        credentials: 'include',
-        body: JSON.stringify(submitData),
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || '등록에 실패했습니다.');
+      if (!response.ok) {
+        throw new Error('언론보도 생성 실패');
       }
 
       addToast({
         type: 'success',
-        message: '언론보도가 등록되었습니다.'
+        message: '언론보도가 성공적으로 생성되었습니다.'
       });
       
       // 약간의 지연 후 리다이렉트 (토스터가 보이도록)
@@ -191,10 +244,10 @@ const NewPressPage: React.FC = () => {
         router.push('/admin/press');
       }, 1000);
     } catch (error) {
-      console.error('Error creating press release:', error);
+      console.error('[언론보도 생성 전체 에러]', error);
       addToast({
         type: 'error',
-        message: error instanceof Error ? error.message : '등록에 실패했습니다.'
+        message: '언론보도 생성 중 오류가 발생했습니다.'
       });
     } finally {
       setLoading(false);
@@ -202,293 +255,258 @@ const NewPressPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">새 언론보도 등록</h1>
-        <Link 
-          href="/admin/press" 
-          className="text-gray-600 hover:text-gray-800"
-        >
-          ← 목록으로 돌아가기
-        </Link>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* 기본 정보 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">기본 정보</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Slug *
-              </label>
-              <input
-                type="text"
-                value={formData.slug}
-                onChange={(e) => handleInputChange('slug', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="예: award-2025"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                발행일 *
-              </label>
-              <input
-                type="date"
-                value={formData.published_date}
-                onChange={(e) => handleInputChange('published_date', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                태그
-              </label>
-              <input
-                type="text"
-                value={formData.tags}
-                onChange={(e) => handleInputChange('tags', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="태그1, 태그2, 태그3"
-              />
-            </div>
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-5xl mx-auto p-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">새 언론보도 등록</h1>
+            <Link
+              href="/admin/press"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              ← 목록으로 돌아가기
+            </Link>
           </div>
         </div>
 
-        {/* 언론사명 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">언론사명 (다국어)</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                한국어 언론사명
-              </label>
-              <input
-                type="text"
-                value={formData.press_name.ko}
-                onChange={(e) => handleNestedInputChange('press_name', 'ko', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="예: 전자신문"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                English Press Name
-              </label>
-              <input
-                type="text"
-                value={formData.press_name.en}
-                onChange={(e) => handleNestedInputChange('press_name', 'en', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="예: ET News"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 썸네일 이미지 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">썸네일 이미지</h2>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              썸네일 업로드
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleThumbnailChange}
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
-            {thumbnailPreview && (
-              <div className="mt-4">
-                <img 
-                  src={thumbnailPreview} 
-                  alt="썸네일 미리보기" 
-                  className="max-w-xs h-40 object-cover rounded border"
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 기본 정보 */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">기본 정보</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  슬러그 (URL) *
+                </label>
+                <input
+                  type="text"
+                  value={formData.slug}
+                  onChange={(e) => handleInputChange('slug', e.target.value)}
+                  placeholder="예: press-release-2025"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 />
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  태그 (쉼표로 구분)
+                </label>
+                <input
+                  type="text"
+                  value={formData.tags}
+                  onChange={(e) => handleInputChange('tags', e.target.value)}
+                  placeholder="예: 언론보도, 수상, 혁신"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* 한국어 콘텐츠 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">한국어 콘텐츠</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                제목 *
-              </label>
-              <input
-                type="text"
-                value={formData.content.ko.title}
-                onChange={(e) => {
-                  handleContentChange('ko', 'title', e.target.value);
-                  if (!formData.slug) {
-                    handleInputChange('slug', generateSlug(e.target.value));
-                  }
-                }}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="제목을 입력하세요"
-              />
+          {/* 언론사 정보 */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">언론사 정보</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  한국어 언론사명 *
+                </label>
+                <input
+                  type="text"
+                  value={formData.press_name.ko}
+                  onChange={(e) => handleNestedInputChange('press_name', 'ko', e.target.value)}
+                  placeholder="예: 전자신문"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  English Press Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.press_name.en}
+                  onChange={(e) => handleNestedInputChange('press_name', 'en', e.target.value)}
+                  placeholder="예: ET News"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
             </div>
-            <div>
+            <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                부제목
-              </label>
-              <input
-                type="text"
-                value={formData.content.ko.subtitle}
-                onChange={(e) => handleContentChange('ko', 'subtitle', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="부제목을 입력하세요"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                본문 내용
-              </label>
-              <TiptapEditor
-                ref={koEditorRef}
-                value={formData.content.ko.body}
-                onChange={(content: string) => handleContentChange('ko', 'body', content)}
-                placeholder="본문 내용을 입력하세요..."
-                images={formData.content.ko.images}
-                onImagesChange={(images) => handleImagesChange('ko', images)}
-                onEditorFocus={() => setActiveEditor(koEditorRef.current?.getEditor())}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                외부 링크 (원문 기사 URL)
+                외부 기사 링크
               </label>
               <input
                 type="url"
-                value={formData.content.ko.external_link}
-                onChange={(e) => handleContentChange('ko', 'external_link', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="https://example.com/news/article"
+                value={formData.external_link}
+                onChange={(e) => handleInputChange('external_link', e.target.value)}
+                placeholder="https://example.com/article"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
-        </div>
 
-        {/* 영어 콘텐츠 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">English Content</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title
-              </label>
-              <input
-                type="text"
-                value={formData.content.en.title}
-                onChange={(e) => handleContentChange('en', 'title', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="Enter title"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Subtitle
-              </label>
-              <input
-                type="text"
-                value={formData.content.en.subtitle}
-                onChange={(e) => handleContentChange('en', 'subtitle', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="Enter subtitle"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Body Content
-              </label>
-              <TiptapEditor
-                ref={enEditorRef}
-                value={formData.content.en.body}
-                onChange={(content: string) => handleContentChange('en', 'body', content)}
-                placeholder="Enter body content..."
-                images={formData.content.en.images}
-                onImagesChange={(images) => handleImagesChange('en', images)}
-                onEditorFocus={() => setActiveEditor(enEditorRef.current?.getEditor())}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                External Link (Original Article URL)
-              </label>
-              <input
-                type="url"
-                value={formData.content.en.external_link}
-                onChange={(e) => handleContentChange('en', 'external_link', e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="https://example.com/news/article"
-              />
+          {/* 썸네일 이미지 */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">썸네일 이미지</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  썸네일 업로드
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleThumbnailChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {thumbnailPreview && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600 mb-2">미리보기:</p>
+                    <img 
+                      src={thumbnailPreview} 
+                      alt="썸네일 미리보기" 
+                      className="w-32 h-32 object-cover rounded-lg border"
+                    />
+                    <p className="text-xs text-orange-600 mt-1">※ 임시 이미지입니다. 생성 버튼 클릭 시 실제 업로드됩니다.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 게시 설정 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">게시 설정</h2>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="is_active"
-              checked={formData.is_active}
-              onChange={(e) => handleInputChange('is_active', e.target.checked)}
-              className="mr-2"
-            />
-            <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-              즉시 게시
-            </label>
+          {/* 한국어 콘텐츠 */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">한국어 콘텐츠</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  제목 *
+                </label>
+                <input
+                  type="text"
+                  value={formData.content.ko.title}
+                  onChange={(e) => handleContentChange('ko', 'title', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  부제목
+                </label>
+                <input
+                  type="text"
+                  value={formData.content.ko.subtitle}
+                  onChange={(e) => handleContentChange('ko', 'subtitle', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  본문 *
+                </label>
+                <TiptapEditor
+                  ref={koEditorRef}
+                  value={formData.content.ko.body}
+                  onChange={(value: string) => handleContentChange('ko', 'body', value)}
+                  slug={formData.slug}
+                  placeholder="한국어 본문을 입력하세요..."
+                  images={formData.content.ko.images}
+                  onImagesChange={(images) => handleImagesChange('ko', images)}
+                  onEditorFocus={() => setActiveEditor(koEditorRef.current?.getEditor())}
+                />
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex justify-end space-x-4 mt-6">
-          <Link
-            href="/admin/press"
-            className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
-          >
-            취소
-          </Link>
-          <button
-            type="button"
-            onClick={() => setShowPreview(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            미리보기
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? '등록 중...' : '등록'}
-          </button>
-        </div>
-      </form>
+          {/* 영어 콘텐츠 */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">영어 콘텐츠</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  제목 *
+                </label>
+                <input
+                  type="text"
+                  value={formData.content.en.title}
+                  onChange={(e) => handleContentChange('en', 'title', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  부제목
+                </label>
+                <input
+                  type="text"
+                  value={formData.content.en.subtitle}
+                  onChange={(e) => handleContentChange('en', 'subtitle', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  본문 *
+                </label>
+                <TiptapEditor
+                  ref={enEditorRef}
+                  value={formData.content.en.body}
+                  onChange={(value: string) => handleContentChange('en', 'body', value)}
+                  slug={formData.slug}
+                  placeholder="영어 본문을 입력하세요..."
+                  images={formData.content.en.images}
+                  onImagesChange={(images) => handleImagesChange('en', images)}
+                  onEditorFocus={() => setActiveEditor(enEditorRef.current?.getEditor())}
+                />
+              </div>
+            </div>
+          </div>
 
-      {/* 플로팅 툴바 */}
-      {activeEditor && (
-        <FloatingToolbar 
-          editor={activeEditor}
-          tiptapRef={activeEditor === koEditorRef.current?.getEditor() ? koEditorRef : enEditorRef}
+          {/* 제출 버튼 */}
+          <div className="flex justify-end space-x-4">
+            <Link
+              href="/admin/press"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              취소
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPreview(true);
+              }}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              미리보기
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {loading ? '생성 중...' : '생성하기'}
+            </button>
+          </div>
+        </form>
+
+        {/* 미리보기 모달 */}
+        <PressPreviewModal
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          formData={formData}
+          thumbnailPreview={thumbnailPreview}
         />
-      )}
 
-      {/* 미리보기 모달 */}
-      <PressPreviewModal
-        isOpen={showPreview}
-        onClose={() => setShowPreview(false)}
-        formData={formData}
-        thumbnailPreview={thumbnailPreview}
-      />
+        {/* 플로팅 툴바 */}
+        {activeEditor && (
+          <FloatingToolbar 
+            editor={activeEditor}
+            tiptapRef={activeEditor === koEditorRef.current?.getEditor() ? koEditorRef : enEditorRef}
+          />
+        )}
+      </div>
     </div>
   );
 };

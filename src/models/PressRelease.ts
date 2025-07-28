@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 /**
  * PressRelease Document (press_releases 컬렉션)
  * - 언론 보도 자료
- * - 다국어 지원, 언론사명, 발행일, 본문(HTML), 외부 기사 링크, 업데이트 정보, 활성화 여부
+ * - 다국어 지원, 언론사명, 본문(HTML), 외부 기사 링크, 업데이트 정보, 활성화 여부
  */
 export interface IPressReleaseContent {
   title: string;
@@ -13,7 +13,6 @@ export interface IPressReleaseContent {
 
 export interface IPressRelease extends Document {
   slug: string;
-  published_date: Date;
   press_name: Record<string, string>;
   content: Record<string, IPressReleaseContent>;
   created_at: Date;
@@ -30,7 +29,6 @@ const PressReleaseContentSchema = new Schema<IPressReleaseContent>({
 
 const PressReleaseSchema = new Schema<IPressRelease>({
   slug: { type: String, required: true, unique: true },
-  published_date: { type: Date, required: true },
   press_name: { type: Schema.Types.Mixed, required: true },
   content: { type: Schema.Types.Mixed, required: true },
   created_at: { type: Date, default: Date.now },
