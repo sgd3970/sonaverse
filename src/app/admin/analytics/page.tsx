@@ -202,7 +202,7 @@ const AnalyticsPage: React.FC = () => {
     return (
       <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">인기 검색 키워드</h3>
+          <h3 className="text-lg font-semibold text-white">인입 키워드</h3>
           <div className="flex space-x-2">
             <button
               onClick={() => handlePeriodChange('daily')}
@@ -236,23 +236,59 @@ const AnalyticsPage: React.FC = () => {
             </button>
           </div>
         </div>
+        
+        {/* 키워드 통계 요약 */}
+        <div className="mb-4 p-3 bg-gray-700 rounded-lg">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-400">총 키워드:</span>
+              <span className="ml-2 text-white font-medium">{data.searchKeywords.length}개</span>
+            </div>
+            <div>
+              <span className="text-gray-400">총 검색:</span>
+              <span className="ml-2 text-white font-medium">
+                {data.searchKeywords.reduce((sum, item) => sum + item.count, 0)}회
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 키워드 목록 */}
         <div className="space-y-3">
           {data.searchKeywords.length > 0 ? (
             data.searchKeywords.slice(0, 10).map((keyword, index) => (
-              <div key={keyword.keyword} className="flex items-center justify-between">
+              <div key={keyword.keyword} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
                 <div className="flex items-center">
-                  <span className="text-sm font-medium text-white mr-2">
+                  <span className={`text-sm font-bold mr-3 ${
+                    index === 0 ? 'text-yellow-400' : 
+                    index === 1 ? 'text-gray-300' : 
+                    index === 2 ? 'text-orange-400' : 'text-gray-400'
+                  }`}>
                     {index + 1}.
                   </span>
-                  <span className="text-sm text-gray-300">{keyword.keyword}</span>
+                  <span className="text-sm text-gray-200 font-medium">{keyword.keyword}</span>
                 </div>
-                <span className="text-sm font-medium text-yellow-400">
-                  {keyword.count}회
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-400">
+                    {keyword.count}회
+                  </span>
+                  <div className="w-16 bg-gray-600 rounded-full h-2">
+                    <div 
+                      className="bg-yellow-400 h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${Math.min((keyword.count / Math.max(...data.searchKeywords.map(k => k.count))) * 100, 100)}%` 
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             ))
           ) : (
-            <p className="text-gray-400 text-sm">검색 데이터가 없습니다.</p>
+            <div className="text-center py-8">
+              <div className="text-gray-400 text-sm mb-2">🔍</div>
+              <p className="text-gray-400 text-sm">검색 데이터가 없습니다.</p>
+              <p className="text-gray-500 text-xs mt-1">사용자가 검색을 시작하면 여기에 표시됩니다.</p>
+            </div>
           )}
         </div>
       </div>
@@ -399,7 +435,7 @@ const AnalyticsPage: React.FC = () => {
                 <span className="text-2xl">🔍</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-400">검색 키워드</p>
+                <p className="text-sm font-medium text-gray-400">인입 키워드</p>
                 <p className="text-2xl font-bold text-white">
                   {data.searchKeywords.length}
                 </p>
