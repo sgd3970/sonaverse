@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
 
-    const brandStories = await BrandStory.find({ is_active: true })
+    const brandStories = await BrandStory.find({ is_published: true })
       .sort({ created_at: -1 })
-      .select(`title.${lang} excerpt.${lang} slug image created_at`);
+      .select(`content.${lang} slug created_at`);
 
     return NextResponse.json({
       success: true,
@@ -29,11 +29,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, excerpt, content, image } = body;
+    const { slug, content, youtube_url, tags, updated_by } = body;
 
-    if (!title || !content) {
+    if (!slug || !content) {
       return NextResponse.json(
-        { success: false, error: '제목과 내용이 필요합니다.' },
+        { success: false, error: '슬러그와 내용이 필요합니다.' },
         { status: 400 }
       );
     }
@@ -41,11 +41,12 @@ export async function POST(request: NextRequest) {
     await dbConnect();
 
     const brandStory = new BrandStory({
-      title,
-      excerpt,
+      slug,
       content,
-      image,
-      is_active: true
+      youtube_url,
+      tags: tags || [],
+      updated_by: updated_by || 'admin',
+      is_published: true
     });
 
     await brandStory.save();
