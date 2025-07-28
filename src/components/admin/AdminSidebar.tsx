@@ -47,7 +47,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, onLogout }) => {
     },
     {
       key: 'diaper-products',
-      label: '보듬 기저귀 관리',
+      label: '제품 관리',
       href: '/admin/diaper-products',
       icon: '👶'
     },

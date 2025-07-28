@@ -2,19 +2,19 @@
 
 import React, { useState, useRef } from 'react';
 
-interface ImageUploadProps {
+interface MultipleImageUploadProps {
   onImageUpload: (url: string) => void;
-  onImageRemove?: () => void;
-  currentImage?: string;
+  onImageRemove: (index: number) => void;
+  currentImages: string[];
   label?: string;
   accept?: string;
   maxSize?: number; // MB
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({
+const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
   onImageUpload,
   onImageRemove,
-  currentImage,
+  currentImages,
   label = '이미지 업로드',
   accept = 'image/*',
   maxSize = 10
@@ -72,7 +72,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const formData = new FormData();
       formData.append('file', file);
 
-      // API 호출 (실제로는 /api/upload 엔드포인트를 만들어야 함)
+      // API 호출
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -95,35 +95,34 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     fileInputRef.current?.click();
   };
 
-  const handleRemove = () => {
-    if (onImageRemove) {
-      onImageRemove();
-    }
-  };
-
   return (
     <div className="space-y-4">
       <label className="block text-sm font-medium text-gray-700">
         {label}
       </label>
       
-      {/* 현재 이미지 표시 */}
-      {currentImage && (
-        <div className="relative">
-          <img
-            src={currentImage}
-            alt="Current"
-            className="w-32 h-32 object-cover rounded-lg border"
-          />
-          {onImageRemove && (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
-            >
-              ×
-            </button>
-          )}
+      {/* 현재 이미지들 표시 */}
+      {currentImages.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {currentImages.map((image, index) => (
+            <div key={index} className="relative">
+              <img
+                src={image}
+                alt={`Image ${index + 1}`}
+                className="w-full h-32 object-cover rounded-lg border"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => onImageRemove(index)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -181,4 +180,4 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   );
 };
 
-export default ImageUpload; 
+export default MultipleImageUpload; 

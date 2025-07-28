@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ProductPreviewModal from '@/components/admin/ProductPreviewModal';
 
 interface DiaperProduct {
   _id: string;
@@ -16,6 +17,8 @@ interface DiaperProduct {
     en: string;
   };
   thumbnail_image: string;
+  product_images: string[];
+  detail_images: string[];
   category: string;
   is_active: boolean;
   created_at: string;
@@ -27,6 +30,8 @@ const DiaperProductsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [previewProduct, setPreviewProduct] = useState<DiaperProduct | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -78,26 +83,9 @@ const DiaperProductsPage: React.FC = () => {
     }
   };
 
-  const toggleActive = async (slug: string, currentStatus: boolean) => {
-    try {
-      const response = await fetch(`/api/admin/diaper-products/${slug}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ is_active: !currentStatus })
-      });
-
-      if (response.ok) {
-        fetchProducts();
-      } else {
-        alert('상태 변경에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('Error updating product:', error);
-      alert('상태 변경에 실패했습니다.');
-    }
+  const handlePreview = (product: DiaperProduct) => {
+    setPreviewProduct(product);
+    setIsPreviewOpen(true);
   };
 
   return (
@@ -105,7 +93,7 @@ const DiaperProductsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">보듬 기저귀 제품 관리</h1>
+          <h1 className="text-3xl font-bold text-gray-900">제품 관리</h1>
           <Link
             href="/admin/diaper-products/new"
             className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
@@ -140,9 +128,8 @@ const DiaperProductsPage: React.FC = () => {
               >
                 <option value="">전체</option>
                 <option value="팬티형">팬티형</option>
-                <option value="밴드형">밴드형</option>
-                <option value="물티슈">물티슈</option>
-                <option value="기타">기타</option>
+                <option value="속기저귀">속기저귀</option>
+                <option value="깔개매트">깔개매트</option>
               </select>
             </div>
             <div className="flex items-end">
@@ -176,9 +163,6 @@ const DiaperProductsPage: React.FC = () => {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       카테고리
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      상태
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       생성일
@@ -216,23 +200,17 @@ const DiaperProductsPage: React.FC = () => {
                           {product.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => toggleActive(product.slug, product.is_active)}
-                          className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                            product.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {product.is_active ? '활성' : '비활성'}
-                        </button>
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(product.created_at).toLocaleDateString('ko-KR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
+                          <button
+                            onClick={() => handlePreview(product)}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            미리보기
+                          </button>
                           <Link
                             href={`/admin/diaper-products/${product.slug}/edit`}
                             className="text-blue-600 hover:text-blue-900"
@@ -261,6 +239,16 @@ const DiaperProductsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 미리보기 모달 */}
+      <ProductPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setPreviewProduct(null);
+        }}
+        product={previewProduct}
+      />
     </div>
   );
 };

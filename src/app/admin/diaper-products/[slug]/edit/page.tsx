@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ImageUpload from '@/components/admin/ImageUpload';
+import MultipleImageUpload from '@/components/admin/MultipleImageUpload';
 
 interface FormData {
   slug: string;
@@ -252,23 +253,20 @@ const EditDiaperProductPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   제품 이미지들 *
                 </label>
-                <p className="text-sm text-gray-500 mb-4">
-                  현재는 첫 번째 이미지만 업로드 가능합니다. 추가 이미지는 수정 페이지에서 업로드해주세요.
-                </p>
-                <ImageUpload
+                <MultipleImageUpload
                   onImageUpload={(url: string) => {
                     setFormData(prev => ({
                       ...prev,
-                      product_images: [url]
+                      product_images: [...prev.product_images, url]
                     }));
                   }}
-                  currentImage={formData.product_images[0] || ''}
-                  onImageRemove={() => {
+                  onImageRemove={(index: number) => {
                     setFormData(prev => ({
                       ...prev,
-                      product_images: []
+                      product_images: prev.product_images.filter((_, i) => i !== index)
                     }));
                   }}
+                  currentImages={formData.product_images}
                 />
               </div>
 
@@ -276,23 +274,20 @@ const EditDiaperProductPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   상세 페이지 이미지들
                 </label>
-                <p className="text-sm text-gray-500 mb-4">
-                  현재는 첫 번째 이미지만 업로드 가능합니다. 추가 이미지는 수정 페이지에서 업로드해주세요.
-                </p>
-                <ImageUpload
+                <MultipleImageUpload
                   onImageUpload={(url: string) => {
                     setFormData(prev => ({
                       ...prev,
-                      detail_images: [url]
+                      detail_images: [...prev.detail_images, url]
                     }));
                   }}
-                  currentImage={formData.detail_images[0] || ''}
-                  onImageRemove={() => {
+                  onImageRemove={(index: number) => {
                     setFormData(prev => ({
                       ...prev,
-                      detail_images: []
+                      detail_images: prev.detail_images.filter((_, i) => i !== index)
                     }));
                   }}
+                  currentImages={formData.detail_images}
                 />
               </div>
             </div>
