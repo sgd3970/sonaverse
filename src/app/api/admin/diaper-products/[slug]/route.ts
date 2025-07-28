@@ -4,10 +4,7 @@ import DiaperProduct from '@/models/DiaperProduct';
 import { getCurrentUser } from '@/lib/auth-server';
 
 // GET - 특정 제품 조회
-export async function GET(
-  request: NextRequest,
-  context: { params: { slug: string } }
-) {
+export async function GET(request: NextRequest, context: any) {
   const { slug } = context.params;
   try {
     await dbConnect();
@@ -32,10 +29,7 @@ export async function GET(
 }
 
 // PUT - 제품 수정
-export async function PUT(
-  request: NextRequest,
-  context: { params: { slug: string } }
-) {
+export async function PUT(request: NextRequest, context: any) {
   const { slug } = context.params;
   try {
     const user = await getCurrentUser();
@@ -79,10 +73,7 @@ export async function PUT(
 }
 
 // DELETE - 제품 삭제
-export async function DELETE(
-  request: NextRequest,
-  context: { params: { slug: string } }
-) {
+export async function DELETE(request: NextRequest, context: any) {
   const { slug } = context.params;
   try {
     const user = await getCurrentUser();
