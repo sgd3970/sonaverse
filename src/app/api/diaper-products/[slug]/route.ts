@@ -3,25 +3,20 @@ import { dbConnect } from '@/lib/db';
 import DiaperProduct from '@/models/DiaperProduct';
 
 // GET - 특정 제품 조회 (활성화된 제품만)
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { slug: string } }
-) {
+export async function GET(request: NextRequest, context: any) {
+  const { slug } = context.params;
   try {
     await dbConnect();
-    
     const product = await DiaperProduct.findOne({ 
-      slug: params.slug,
+      slug,
       is_active: true 
     });
-    
     if (!product) {
       return NextResponse.json({
         success: false,
         error: '제품을 찾을 수 없습니다.'
       }, { status: 404 });
     }
-    
     return NextResponse.json({
       success: true,
       product
