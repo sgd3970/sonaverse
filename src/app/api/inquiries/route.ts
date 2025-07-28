@@ -24,6 +24,17 @@ export async function POST(request: NextRequest) {
     await dbConnect();
     const body = await request.json();
     
+    // 필수 필드 검증
+    const requiredFields = ['inquiry_type', 'name', 'company_name', 'phone_number', 'email', 'message'];
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        return NextResponse.json(
+          { error: `필수 필드가 누락되었습니다: ${field}` },
+          { status: 400 }
+        );
+      }
+    }
+    
     const inquiry = new Inquiry(body);
     await inquiry.save();
     

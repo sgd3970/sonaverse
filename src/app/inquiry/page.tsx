@@ -110,14 +110,13 @@ const InquiryPage: React.FC = () => {
 
       // 문의 제출
       const inquiryData = {
-        category: form.category,
+        inquiry_type: form.category,
         name: form.name,
-        position: form.position,
-        company: form.company,
-        phone: form.phone,
+        company_name: form.company,
+        phone_number: form.phone,
         email: form.email,
         message: form.message,
-        attachments: uploadedFiles
+        attached_files: uploadedFiles
       };
 
       const response = await fetch('/api/inquiries', {
