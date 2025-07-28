@@ -30,7 +30,7 @@ const BlogPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [visibleCount, setVisibleCount] = useState(4); // 큰 카드 1개 + 작은 카드 3개
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const BlogPage: React.FC = () => {
       if (!res.ok) throw new Error('Failed to fetch blog posts');
       const data = await res.json();
       setBlogPosts(data.results || []);
-      setVisibleCount(6); // 검색 시 초기화
+      setVisibleCount(4); // 검색 시 초기화
     } catch (err) {
       console.error('Error fetching blog posts:', err);
       setError('블로그 포스트를 불러오는데 실패했습니다.');
@@ -128,76 +128,154 @@ const BlogPage: React.FC = () => {
         {/* 블로그 포스트 그리드 */}
         {visiblePosts.length === 0 ? (
           <div className="text-center py-20">
-            <div className="bg-white rounded-2xl p-12 shadow-lg border border-gray-200">
-              <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              <p className="text-gray-500 text-lg">{t('no_results', '검색 결과가 없습니다.')}</p>
+            <div className="bg-white rounded-3xl p-12 shadow-xl border border-gray-200">
+              <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="h-10 w-10 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-800 mb-2">{t('no_results', '검색 결과가 없습니다.')}</h3>
+              <p className="text-gray-500">다른 키워드로 검색해보세요</p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-            {visiblePosts.map((post) => {
-              const content = post.content[i18n.language as keyof typeof post.content] || post.content.ko || post.content.en;
-              if (!content) return null;
-              return (
-                <Link
-                  key={post._id}
-                  href={`/blog/${post.slug}`}
-                  className="group bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 flex flex-col h-full"
-                >
-                  {/* 이미지 */}
-                  <div className="aspect-[5/3] w-full bg-gray-200 overflow-hidden flex-shrink-0">
-                    <img
-                      src={content.thumbnail_url || '/logo/nonImage_logo.png'}
-                      alt={content.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={e => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
-                    />
-                  </div>
+          <div className="space-y-8">
+            {/* 첫 번째 포스트는 특별히 크게 표시 */}
+            {visiblePosts.length > 0 && (
+              <div className="mb-16">
+                {(() => {
+                  const featuredPost = visiblePosts[0];
+                  const content = featuredPost.content[i18n.language as keyof typeof featuredPost.content] || featuredPost.content.ko || featuredPost.content.en;
+                  if (!content) return null;
                   
-                  {/* 본문 */}
-                  <div className="p-6 flex flex-col flex-1">
-                    {/* 제목 */}
-                    <h2 className="text-xl font-bold text-slate-800 mb-3 line-clamp-2 group-hover:text-slate-600 transition-colors min-h-[3.5rem]">
-                      {content.title}
-                    </h2>
-                    
-                    {/* 부제목 */}
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow min-h-[2.5rem]">
-                      {content.subtitle}
-                    </p>
-                    
-                    {/* 하단 정보 */}
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-100 mt-auto">
-                      <div className="flex items-center text-xs text-gray-500">
-                        <span>{formatDate(post.created_at)}</span>
-                        <span className="mx-2">•</span>
-                        <span>{i18n.language === 'en' ? 'Sonaverse' : '소나버스'}</span>
+                  return (
+                    <Link
+                      href={`/blog/${featuredPost.slug}`}
+                      className="group block"
+                    >
+                      <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-200 hover:shadow-3xl transition-all duration-500 transform hover:-translate-y-3">
+                        <div className="lg:flex">
+                          {/* 이미지 */}
+                          <div className="lg:w-1/2 relative overflow-hidden">
+                            <div className="aspect-[16/10] lg:h-96 relative">
+                              <img
+                                src={content.thumbnail_url || '/logo/nonImage_logo.png'}
+                                alt={content.title}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                onError={e => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-all duration-500"></div>
+                              <div className="absolute top-6 left-6">
+                                <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-full text-sm font-semibold shadow-lg">
+                                  Featured Article
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* 콘텐츠 */}
+                          <div className="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
+                            <div className="flex items-center space-x-4 mb-6">
+                              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <div className="w-8 h-8 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                </div>
+                                <span>{formatDate(featuredPost.created_at)}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span>{i18n.language === 'en' ? 'SONAVERSE' : '소나버스'}</span>
+                              </div>
+                            </div>
+                            
+                            <h2 className="text-3xl lg:text-4xl font-bold text-slate-800 mb-6 group-hover:text-rose-600 transition-colors duration-300 leading-tight">
+                              {content.title}
+                            </h2>
+                            
+                            <p className="text-lg text-gray-600 mb-8 leading-relaxed line-clamp-3">
+                              {content.subtitle}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+                    </Link>
+                  );
+                })()}
+              </div>
+            )}
+            
+            {/* 나머지 포스트들 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {visiblePosts.slice(1).map((post, index) => {
+                const content = post.content[i18n.language as keyof typeof post.content] || post.content.ko || post.content.en;
+                if (!content) return null;
+                return (
+                  <Link
+                    key={post._id}
+                    href={`/blog/${post.slug}`}
+                    className="group block"
+                  >
+                    <article className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 h-full flex flex-col">
+                      {/* 이미지 */}
+                      <div className="relative overflow-hidden">
+                        <div className="aspect-[5/3] relative">
+                          <img
+                            src={content.thumbnail_url || '/logo/nonImage_logo.png'}
+                            alt={content.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            onError={e => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        </div>
+                      </div>
+                      
+                      {/* 콘텐츠 */}
+                      <div className="p-6 flex flex-col flex-1">
+                        {/* 메타 정보 */}
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-2 h-2 bg-gradient-to-r from-rose-400 to-pink-500 rounded-full"></div>
+                          <span className="text-xs text-gray-500 font-medium">{formatDate(post.created_at)}</span>
+                          <span className="text-xs text-gray-400">•</span>
+                          <span className="text-xs text-gray-500">{i18n.language === 'en' ? 'SONAVERSE' : '소나버스'}</span>
+                        </div>
+                        
+                        {/* 제목 */}
+                        <h2 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-rose-600 transition-colors duration-300 line-clamp-2 leading-tight">
+                          {content.title}
+                        </h2>
+                        
+                        {/* 부제목 */}
+                        <p className="text-gray-600 text-sm mb-6 line-clamp-3 flex-grow leading-relaxed">
+                          {content.subtitle}
+                        </p>
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
+            </div>
+            
+            {/* 더보기 버튼 */}
+            {hasMore && (
+              <div className="text-center mt-12">
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 3)}
+                  className="inline-flex items-center px-8 py-4 bg-slate-800 text-white rounded-2xl font-semibold hover:bg-slate-900 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  {t('load_more', '더 알아보기')}
+                  <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* 더 알아보기 버튼 */}
-        {hasMore && (
-          <div className="flex justify-center mt-16">
-            <button
-              onClick={() => setVisibleCount((prev) => prev + 6)}
-              className="inline-flex items-center px-8 py-4 text-base font-semibold bg-slate-800 text-white rounded-full hover:bg-slate-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-            >
-              {t('load_more', '더 알아보기')}
-              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-            </button>
-          </div>
-        )}
-        
         {/* 검색 기능 추가 */}
         <div className="flex justify-center mt-16">
           <div className="w-full max-w-md relative">

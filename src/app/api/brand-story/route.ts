@@ -7,6 +7,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const lang = searchParams.get('lang') || 'ko';
     const published = searchParams.get('published');
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const limit = searchParams.get('limit');
+    const search = searchParams.get('search')?.trim();
 
     await dbConnect();
 
@@ -16,13 +20,40 @@ export async function GET(request: NextRequest) {
       query = { is_published: published === 'true' };
     }
 
+    // 검색 조건 추가
+    if (search) {
+      query = {
+        ...query,
+        $or: [
+          { 'content.ko.title': { $regex: search, $options: 'i' } },
+          { 'content.en.title': { $regex: search, $options: 'i' } },
+          { 'content.ko.subtitle': { $regex: search, $options: 'i' } },
+          { 'content.en.subtitle': { $regex: search, $options: 'i' } },
+          { tags: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    const skip = (page - 1) * pageSize;
+    const total = await BrandStory.countDocuments(query);
+    const totalPages = Math.ceil(total / pageSize);
+
+    // limit 파라미터가 있으면 pageSize 대신 limit 사용
+    const finalLimit = limit ? parseInt(limit) : pageSize;
+
     const brandStories = await BrandStory.find(query)
       .sort({ created_at: -1 })
+      .skip(skip)
+      .limit(finalLimit)
       .select('content slug created_at is_published tags youtube_url');
 
     return NextResponse.json({
       success: true,
-      results: brandStories
+      results: brandStories,
+      total,
+      page,
+      pageSize: finalLimit,
+      totalPages
     });
   } catch (error) {
     console.error('GET /api/brand-story error:', error);

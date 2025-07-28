@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useToast } from '../../../components/Toast';
 
@@ -22,25 +22,37 @@ interface BlogPost {
   tags: string[];
 }
 
+interface PaginationData {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  results: BlogPost[];
+}
+
 const AdminBlogPage: React.FC = () => {
   const { addToast } = useToast();
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [allBlogPosts, setAllBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
+  // 모든 블로그 포스트를 가져오기
   useEffect(() => {
-    fetchBlogPosts();
+    fetchAllBlogPosts();
   }, []);
 
-  const fetchBlogPosts = async () => {
+  const fetchAllBlogPosts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/blog?published=false', {
+      const res = await fetch('/api/blog?published=false&pageSize=1000', {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to fetch blog posts');
       const data = await res.json();
-      setBlogPosts(data.results || []);
+      setAllBlogPosts(data.results || []);
     } catch (err) {
       console.error('Error fetching blog posts:', err);
       setError('블로그 포스트 목록을 불러오는데 실패했습니다.');
@@ -51,12 +63,64 @@ const AdminBlogPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }, [addToast]);
+
+  // 검색 필터링된 결과
+  const filteredPosts = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return allBlogPosts;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    return allBlogPosts.filter(post => {
+      const koTitle = post.content?.ko?.title?.toLowerCase() || '';
+      const enTitle = post.content?.en?.title?.toLowerCase() || '';
+      const koSubtitle = post.content?.ko?.subtitle?.toLowerCase() || '';
+      const enSubtitle = post.content?.en?.subtitle?.toLowerCase() || '';
+      const tags = post.tags?.join(' ').toLowerCase() || '';
+      
+      return koTitle.includes(searchLower) ||
+             enTitle.includes(searchLower) ||
+             koSubtitle.includes(searchLower) ||
+             enSubtitle.includes(searchLower) ||
+             tags.includes(searchLower);
+    });
+  }, [allBlogPosts, searchTerm]);
+
+  // 페이징네이션 계산
+  const paginationData = useMemo(() => {
+    const total = filteredPosts.length;
+    const totalPages = Math.ceil(total / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const results = filteredPosts.slice(startIndex, endIndex);
+    
+    return {
+      total,
+      page: currentPage,
+      pageSize,
+      totalPages,
+      results
+    };
+  }, [filteredPosts, currentPage, pageSize]);
+
+  // 검색어가 변경되면 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const handleTogglePublished = async (id: string, currentStatus: boolean) => {
     try {
       // 즉시 로컬 상태 업데이트
-      setBlogPosts(prev => prev.map(post => 
+      setAllBlogPosts(prev => prev.map(post => 
         post._id === id 
           ? { ...post, is_published: !currentStatus }
           : post
@@ -73,7 +137,7 @@ const AdminBlogPage: React.FC = () => {
       
       if (!res.ok) {
         // API 실패 시 원래 상태로 되돌리기
-        setBlogPosts(prev => prev.map(post => 
+        setAllBlogPosts(prev => prev.map(post => 
           post._id === id 
             ? { ...post, is_published: currentStatus }
             : post
@@ -106,7 +170,7 @@ const AdminBlogPage: React.FC = () => {
       if (!res.ok) throw new Error('Failed to delete blog post');
       
       // 목록 새로고침
-      fetchBlogPosts();
+      fetchAllBlogPosts();
       addToast({
         type: 'success',
         message: '블로그 포스트가 삭제되었습니다.'
@@ -160,6 +224,38 @@ const AdminBlogPage: React.FC = () => {
         </Link>
       </div>
 
+      <div className="bg-gray-800 rounded-lg shadow overflow-hidden border border-gray-700 mb-6">
+        <div className="p-4 flex items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="제목, 부제목, 태그로 검색..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          {searchTerm && (
+            <div className="ml-4 text-sm text-gray-400">
+              {paginationData.total}개 결과
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="bg-gray-800 rounded-lg shadow overflow-hidden border border-gray-700">
         <table className="min-w-full divide-y divide-gray-700">
           <thead className="bg-gray-700">
@@ -182,7 +278,7 @@ const AdminBlogPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-gray-800 divide-y divide-gray-700">
-            {blogPosts.map((post) => (
+            {paginationData.results.map((post) => (
               <tr key={post._id} className="hover:bg-gray-700">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-white">
@@ -231,6 +327,69 @@ const AdminBlogPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {paginationData.totalPages > 1 && (
+        <div className="mt-6 flex justify-center">
+          <nav className="flex items-center space-x-1">
+            {/* 이전 버튼 */}
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-l-lg hover:bg-gray-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* 페이지 번호들 */}
+            {Array.from({ length: Math.min(5, paginationData.totalPages) }, (_, i) => {
+              let pageNum;
+              if (paginationData.totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= paginationData.totalPages - 2) {
+                pageNum = paginationData.totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`relative inline-flex items-center px-3 py-2 text-sm font-medium border transition-colors ${
+                    currentPage === pageNum
+                      ? 'z-10 bg-yellow-400 text-black border-yellow-400'
+                      : 'text-gray-300 bg-gray-800 border-gray-700 hover:bg-gray-700 hover:text-white'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {/* 다음 버튼 */}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === paginationData.totalPages}
+              className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-r-lg hover:bg-gray-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </nav>
+
+          {/* 페이지 정보 */}
+          <div className="ml-6 flex items-center text-sm text-gray-400">
+            <span>
+              {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, paginationData.total)} / {paginationData.total}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

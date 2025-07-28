@@ -71,7 +71,13 @@ const PressDetailPage: React.FC = () => {
       <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">{t('not_found', '해당 보도 자료를 찾을 수 없습니다.')}</h1>
-          <Link href="/press" className="text-blue-600 hover:underline">
+          <Link 
+            href="/press" 
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-slate-600 hover:bg-slate-700 transition-colors"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
             {t('back_to_list', '목록으로 돌아가기')}
           </Link>
         </div>
@@ -84,7 +90,13 @@ const PressDetailPage: React.FC = () => {
       <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">{t('error_occurred', '오류가 발생했습니다.')}</h1>
-          <Link href="/press" className="text-blue-600 hover:underline">
+          <Link 
+            href="/press" 
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-slate-600 hover:bg-slate-700 transition-colors"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
             {t('back_to_list', '목록으로 돌아가기')}
           </Link>
         </div>
@@ -97,17 +109,28 @@ const PressDetailPage: React.FC = () => {
       <div className="max-w-2xl w-full mx-auto">
         {/* 뒤로가기 버튼 */}
         <div className="mb-6">
-          <Link href="/press" className="text-gray-600 hover:text-gray-800 flex items-center">
-            <span className="mr-2">←</span>
+          <Link 
+            href="/press" 
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-slate-600 hover:bg-slate-700 transition-colors"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
             {t('back_to_list', '목록으로 돌아가기')}
           </Link>
         </div>
         
         {/* 제목 및 메타 정보 */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-4">{pressData.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-4">
+            {typeof pressData.title === 'object' && pressData.title 
+              ? ((pressData.title as any)[i18n.language] || (pressData.title as any).ko || (pressData.title as any).en || '제목 없음')
+              : (pressData.title || '제목 없음')}
+          </h1>
           <div className="text-sm text-gray-500 mb-4">
-            {pressData.press_name} | {new Date(pressData.published_date).toLocaleDateString()}
+            {typeof pressData.press_name === 'object' && pressData.press_name
+              ? ((pressData.press_name as any)[i18n.language] || (pressData.press_name as any).ko || (pressData.press_name as any).en || '')
+              : (pressData.press_name || '')} | {new Date(pressData.published_date).toLocaleDateString()}
           </div>
         </div>
         

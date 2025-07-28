@@ -1,54 +1,62 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import InquiryDetailModal from '@/components/admin/InquiryDetailModal';
 import { useToast } from '@/components/Toast';
+
+interface Inquiry {
+  _id: string;
+  inquiry_type: string;
+  name: string;
+  company_name: string;
+  phone_number: string;
+  email: string;
+  message: string;
+  attached_files: string[];
+  submitted_at: string;
+  status: string;
+  admin_notes?: string;
+  responded_at?: string;
+  responded_by?: string;
+}
 
 const InquiriesManagement: React.FC = () => {
   const { addToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [inquiries, setInquiries] = useState([
-    {
-      id: '1',
-      name: '김철수',
-      company: 'ABC 기업',
-      category: '제품 문의',
-      subject: '만보 보행기 대량 구매 문의',
-      message: '안녕하세요. 만보 보행기 대량 구매를 고려하고 있습니다. 100개 이상 구매 시 할인율과 배송 조건에 대해 문의드립니다. 또한 제품의 안전 인증서와 보증 기간도 확인하고 싶습니다. 답변 부탁드립니다.',
-      status: 'new',
-      received_date: '2024-01-15',
-      email: 'kim@abc.com',
-      phone: '010-1234-5678'
-    },
-    {
-      id: '2',
-      name: '이영희',
-      company: 'XYZ 회사',
-      category: '가격 문의',
-      subject: '보듬 기저귀 가격 문의',
-      message: '보듬 기저귀의 가격 정책에 대해 문의드립니다. 소매점과 대량 구매 시 가격 차이가 얼마나 나는지, 그리고 계약 조건은 어떻게 되는지 알려주시기 바랍니다.',
-      status: 'inProgress',
-      received_date: '2024-01-14',
-      email: 'lee@xyz.com',
-      phone: '010-9876-5432'
-    },
-    {
-      id: '3',
-      name: '박민수',
-      company: 'DEF 기업',
-      category: '기술 문의',
-      subject: '제품 스펙 상세 문의',
-      message: '제품의 상세 스펙과 기술 자료를 요청드립니다. 특히 재질, 크기, 무게, 사용 연령 등에 대한 상세 정보가 필요합니다. PDF 형태로 자료를 보내주시면 감사하겠습니다.',
-      status: 'completed',
-      received_date: '2024-01-13',
-      email: 'park@def.com',
-      phone: '010-5555-1234'
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchInquiries();
+  }, []);
+
+  const fetchInquiries = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/inquiries', {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch inquiries');
+      }
+      
+      const data = await response.json();
+      setInquiries(data);
+    } catch (error) {
+      console.error('Error fetching inquiries:', error);
+      addToast({
+        type: 'error',
+        message: '문의 목록을 불러오는데 실패했습니다.'
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const labels = {
     title: '문의 관리',
@@ -81,7 +89,7 @@ const InquiriesManagement: React.FC = () => {
     try {
       // 실제로는 API 호출
       setInquiries(prev => prev.map(inquiry => 
-        inquiry.id === inquiryId ? { ...inquiry, status: newStatus } : inquiry
+        inquiry._id === inquiryId ? { ...inquiry, status: newStatus } : inquiry
       ));
       
       addToast({
@@ -99,7 +107,7 @@ const InquiriesManagement: React.FC = () => {
   // 문의 삭제 함수
   const handleDeleteInquiry = async (inquiryId: string) => {
     try {
-      setInquiries(prev => prev.filter(inquiry => inquiry.id !== inquiryId));
+      setInquiries(prev => prev.filter(inquiry => inquiry._id !== inquiryId));
       addToast({
         type: 'success',
         message: '문의가 삭제되었습니다.'
@@ -115,8 +123,8 @@ const InquiriesManagement: React.FC = () => {
   const filteredInquiries = inquiries.filter(inquiry => {
     const matchesSearch = 
       inquiry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.subject.toLowerCase().includes(searchTerm.toLowerCase());
+      inquiry.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inquiry.message.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || inquiry.status === statusFilter;
     
@@ -134,6 +142,22 @@ const InquiriesManagement: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const truncateMessage = (message: string, maxLength: number = 50) => {
+    if (message.length <= maxLength) return message;
+    return message.substring(0, maxLength) + '...';
   };
 
   return (
@@ -200,9 +224,15 @@ const InquiriesManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-gray-800 divide-y divide-gray-700">
-              {filteredInquiries.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
+                    문의 목록을 불러오는 중입니다...
+                  </td>
+                </tr>
+              ) : filteredInquiries.length > 0 ? (
                 filteredInquiries.map((inquiry) => (
-                  <tr key={inquiry.id} className="hover:bg-gray-700">
+                  <tr key={inquiry._id} className="hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-white">
                         {inquiry.name}
@@ -212,20 +242,20 @@ const InquiriesManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-300">{inquiry.company}</div>
+                      <div className="text-sm text-gray-300">{inquiry.company_name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-300">{inquiry.category}</div>
+                      <div className="text-sm text-gray-300">{inquiry.inquiry_type}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-300 max-w-xs truncate">
-                        {inquiry.subject}
+                        {truncateMessage(inquiry.message)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
                         value={inquiry.status}
-                        onChange={(e) => handleStatusChange(inquiry.id, e.target.value)}
+                        onChange={(e) => handleStatusChange(inquiry._id, e.target.value)}
                         className={`px-2 py-1 text-xs font-semibold rounded-full border-0 focus:ring-2 focus:ring-yellow-400 ${getStatusColor(inquiry.status)}`}
                       >
                         {Object.entries(labels.status).map(([key, value]) => (
@@ -236,7 +266,7 @@ const InquiriesManagement: React.FC = () => {
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-300">{inquiry.received_date}</div>
+                      <div className="text-sm text-gray-300">{formatDate(inquiry.submitted_at)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex gap-2">
@@ -253,7 +283,7 @@ const InquiriesManagement: React.FC = () => {
                           className="text-red-400 hover:text-red-300 transition-colors"
                           onClick={() => {
                             if (confirm('정말 삭제하시겠습니까?')) {
-                              handleDeleteInquiry(inquiry.id);
+                              handleDeleteInquiry(inquiry._id);
                             }
                           }}
                         >

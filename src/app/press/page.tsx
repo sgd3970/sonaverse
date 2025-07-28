@@ -76,58 +76,88 @@ const PressPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {pressList.map((item, index) => (
-                <Link 
-                  key={item.slug} 
-                  href={`/press/${item.slug}`}
-                  className="group bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 hover:border-gray-300 block"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        {/* 언론사 태그 */}
-                        {item.press_name && (
-                          <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full mr-3">
-                            {item.press_name}
-                          </span>
-                        )}
-                        {/* 날짜 */}
-                        <span className="text-xs text-gray-500">
-                          {new Date(item.published_date || item.created_at).toLocaleDateString('ko-KR')}
-                        </span>
-                      </div>
-                      
-                      {/* 제목 */}
-                      <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-slate-600 transition-colors line-clamp-2">
-                        {item.title}
-                      </h3>
-                      
-                      {/* 요약 또는 미리보기 */}
-                      {item.summary && (
-                        <p className="text-gray-600 text-sm line-clamp-2">
-                          {item.summary}
-                        </p>
-                      )}
+            <div className="space-y-0">
+              {/* 헤더 구분자 */}
+              <div className="border-b-2 border-gray-400 bg-gray-50">
+                <div className="max-w-5xl mx-auto px-6">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="w-16 text-sm font-semibold text-gray-700">
+                      번호
                     </div>
-                    
-                    {/* 더보기 버튼 */}
-                    <div className="ml-4 flex-shrink-0">
-                      <span className="text-slate-600 group-hover:text-slate-800 text-sm font-medium flex items-center">
-                        더보기
-                        <svg className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </span>
+                    <div className="flex-1 text-sm font-semibold text-gray-700">
+                      제목
+                    </div>
+                    <div className="w-24 text-sm font-semibold text-gray-700 text-center">
+                      작성일
+                    </div>
+                    <div className="w-20 text-sm font-semibold text-gray-700 text-center">
+                      언론사
                     </div>
                   </div>
-                </Link>
-              ))}
+                </div>
+              </div>
+              
+              {pressList.map((item, index) => {
+                // 다국어 객체를 안전하게 처리
+                const title = item.content && item.content[i18n.language] && item.content[i18n.language].title
+                  ? item.content[i18n.language].title
+                  : (item.content && item.content.ko && item.content.ko.title ? item.content.ko.title : '제목 없음');
+                
+                const pressName = typeof item.press_name === 'object' && item.press_name
+                  ? (item.press_name[i18n.language as keyof typeof item.press_name] || item.press_name.ko || item.press_name.en || '')
+                  : (item.press_name || '');
+                
+                const isLastItem = index === pressList.length - 1;
+                const showBorder = pressList.length > 1 ? !isLastItem : true;
+                
+                return (
+                  <div key={item.slug}>
+                    <Link 
+                      href={`/press/${item.slug}`}
+                      className="block py-4 hover:bg-gray-50 transition-colors duration-200 group"
+                    >
+                      <div className="max-w-5xl mx-auto px-6">
+                        <div className="flex items-center justify-between">
+                          {/* 번호 */}
+                          <div className="w-16 text-sm text-gray-500">
+                            {((page - 1) * 10) + index + 1}
+                          </div>
+                          
+                          {/* 제목 */}
+                          <div className="flex-1 min-w-0 pr-4">
+                            <h3 className="text-base font-medium text-gray-900 truncate group-hover:text-[#bda191] transition-colors">
+                              {title}
+                            </h3>
+                          </div>
+                          
+                          {/* 작성일자 */}
+                          <div className="w-24 text-sm text-gray-500 text-center">
+                            {new Date(item.created_at).toLocaleDateString('ko-KR')}
+                          </div>
+                          
+                          {/* 신문사 */}
+                          {pressName && (
+                            <div className="w-20 text-sm text-gray-600 text-center">
+                              {pressName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                    {/* 게시물 사이 구분선 */}
+                    {showBorder && (
+                      <div className="border-b border-gray-200"></div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
+        
+        
         {/* 검색창과 페이지네이션 */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 mt-12">
+        <div className="mt-12">
           <div className="flex flex-col items-center space-y-6">
             {/* 검색창 */}
             <div className="w-full max-w-md relative">

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '../../components/Toast';
+import RecentPostModal from '../../components/admin/RecentPostModal';
 
 interface DashboardStats {
   totalPress: number;
@@ -10,7 +11,6 @@ interface DashboardStats {
   totalInquiries: number;
   totalBrandStories: number;
   totalVisitors: number;
-  totalPageViews: number;
   recentPosts: Array<{
     type: string;
     title: string;
@@ -27,10 +27,11 @@ const AdminDashboard: React.FC = () => {
     totalInquiries: 0,
     totalBrandStories: 0,
     totalVisitors: 0,
-    totalPageViews: 0,
     recentPosts: []
   });
-  const [loading, setLoading] = useState(false); // 임시로 false로 설정
+  const [loading, setLoading] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -112,7 +113,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Link href="/admin/press" className="bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-700">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -160,6 +161,18 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </Link>
+
+        <Link href="/admin/analytics" className="bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-700">
+          <div className="flex items-center">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <span className="text-2xl">👥</span>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-400">방문자</p>
+              <p className="text-2xl font-bold text-white">{stats.totalVisitors}</p>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* 빠른 액션 */}
@@ -200,7 +213,10 @@ const AdminDashboard: React.FC = () => {
               <tbody className="bg-gray-800 divide-y divide-gray-700">
                 {stats.recentPosts.length > 0 ? (
                   stats.recentPosts.slice(0, 5).map((post, index) => (
-                    <tr key={index} className="hover:bg-gray-700">
+                    <tr key={index} className="hover:bg-gray-700 cursor-pointer" onClick={() => {
+                      setSelectedPost(post);
+                      setShowModal(true);
+                    }}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           post.type === 'blog' ? 'bg-green-100 text-green-800' :
@@ -216,7 +232,13 @@ const AdminDashboard: React.FC = () => {
                         {post.title}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                        {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                        {new Date(post.created_at).toLocaleDateString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </td>
                     </tr>
                   ))
@@ -232,6 +254,16 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 최근 게시물 모달 */}
+      <RecentPostModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedPost(null);
+        }}
+        post={selectedPost}
+      />
     </div>
   );
 };

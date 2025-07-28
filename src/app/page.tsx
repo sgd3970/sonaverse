@@ -8,7 +8,7 @@ const heroContent = {
   ko: {
     headline: '시니어 라이프를 혁신하는',
     subheadline: '소나버스',
-    description: '불편을 겪는 사용자들의 현실을 통해 발견한 혁신.<br />명확한 브랜딩으로 시니어 보행 기술의 사각지대를 해결합니다.',
+    description: '불편을 겪는 사용자들의 현실을 통해 발견한 혁신.\n명확한 브랜딩으로 시니어 보행 기술의 사각지대를 해결합니다.',
     cta: '',
     stats: [
       { number: '120만', label: '노인장기요양보험 등급자' },
@@ -82,7 +82,7 @@ const manboDetails = {
   ko: {
     title: '만보 (Manual Walkmate MANBO)',
     subtitle: '하이브리드형 워크메이트',
-    description: '바형 손잡이와 통 프레임의 차별화된 설계로 안전성을 갖추며, 경사지 제어를 포함한 스마트 기능의 편의성을 갖춘,<br />사용자 만족도를 극대화한 국내 유일 하이브리드형 워크메이트',
+    description: '바형 손잡이와 통 프레임의 차별화된 설계로 안전성을 갖추며, 경사지 제어를 포함한 스마트 기능의 편의성을 갖춘,\n사용자 만족도를 극대화한 국내 유일 하이브리드형 워크메이트',
     features: [
       {
         title: '하이브리드 주행 시스템',
@@ -142,7 +142,7 @@ const bodeumDetails = {
   ko: {
     title: '보듬 (BODUME)',
     subtitle: '부모님을 위한 작은 배려',
-    description: '성인용 기저귀의 실제 구매자이자 사용자의 현장 경험을 통해 제작.<br />실제 현직 요양보호사와 팀을 이루어 실제 사용자 및 구매자의 개선점을 반영한 성인용 기저귀',
+    description: '성인용 기저귀의 실제 구매자이자 사용자의 현장 경험을 통해 제작.\n실제 현직 요양보호사와 팀을 이루어 실제 사용자 및 구매자의 개선점을 반영한 성인용 기저귀',
     meaning: '"보듬"이란, 부모님의 하루를 보듬어 살핀다 라는 뜻으로 사랑을 의미합니다.',
     features: [
       {
@@ -162,7 +162,7 @@ const bodeumDetails = {
       },
       {
         title: '편안한 허리밴드',
-        description: '뛰어난 신축성과 특수 공법을 사용한 밴드로<br />피부에 찔리지 않고 부드러움',
+        description: '뛰어난 신축성과 특수 공법을 사용한 밴드로\n피부에 찔리지 않고 부드러움',
         icon: '✨'
       },
       {
@@ -178,7 +178,7 @@ const bodeumDetails = {
       '속기저귀 라운드형',
       '위생 깔개매트'
     ],
-    business: '한번 사용하면 계속 구매하게 되는 상품으로 브랜딩 후 지속적인 매출 가능.<br />이후 수출 국가에 맞는 다양한 사이즈, 품목 지속적으로 증가 계획'
+    business: '한번 사용하면 계속 구매하게 되는 상품으로 브랜딩 후 지속적인 매출 가능.\n이후 수출 국가에 맞는 다양한 사이즈, 품목 지속적으로 증가 계획'
   },
   en: {
     title: 'BODUME',
@@ -437,7 +437,7 @@ const businessStrategy = {
       title: 'B2B: 제도 활용 안정적 수익 기반 마련 가능',
       description: '소나버스(제조) → 복지용품 유통(유통) → 시니어(사용자)',
       advantages: [
-        '한국의 경우 복지용구 제도를 통해 85~100% 할인 가능<br />(수동형 4만5천원, 하이브리드 10만5천원)',
+        '한국의 경우 복지용구 제도를 통해 85~100% 할인 가능\n(수동형 4만5천원, 하이브리드 10만5천원)',
         '전국 복지용구 사업장 약 2,100개',
         '노인장기요양보험 등급자 약 120만 명'
       ]
@@ -499,6 +499,10 @@ const HomePage: React.FC = () => {
   const [pressData, setPressData] = useState([]);
   const [blogData, setBlogData] = useState([]);
   const [brandStoryData, setBrandStoryData] = useState<any[]>([]);
+  
+  // 더보기 기능을 위한 상태
+  const [showFullTeam, setShowFullTeam] = useState(false);
+  const [showFullHistory, setShowFullHistory] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -535,132 +539,29 @@ const HomePage: React.FC = () => {
       })
       .catch(err => console.error('Error fetching blog:', err));
 
-    // Fetch brand stories from pages API
-    fetch('/api/pages?limit=6')
+    // Fetch brand stories
+    fetch('/api/brand-story?published=true&limit=6')
       .then(res => res.json())
       .then(data => {
-        // Filter pages by category or type if available
-        let brandStories: any[] = Array.isArray(data.results || data) ? (data.results || data).filter((page: any) => 
-          page.category === 'brand-story' || 
-          page.type === 'brand-story' ||
-          page.slug?.includes('brand')
-        ).slice(0, 6) : [];
-        
-        // If no brand stories found, create mock data
-        if (brandStories.length === 0) {
-          brandStories = [
-            {
-              slug: 'our-journey-from-startup-to-leader',
-              content: {
-                ko: {
-                  title: '스타트업에서 리더로: 우리의 여정',
-                  subtitle: '작은 아이디어에서 시작하여 산업을 선도하기까지의 여정',
-                  thumbnail_url: '/logo/symbol_logo.png'
-                },
-                en: {
-                  title: 'From Startup to Leader: Our Journey',
-                  subtitle: 'From a small idea to leading the industry',
-                  thumbnail_url: '/logo/symbol_logo.png'
-                }
-              },
-              created_at: '2024-01-15',
-              published_date: '2024-01-15'
-            },
-            {
-              slug: 'innovation-at-the-core-of-our-brand',
-              content: {
-                ko: {
-                  title: '브랜드의 핵심, 혁신',
-                  subtitle: '브랜드의 핵심 가치와 혁신 사례를 소개합니다',
-                  thumbnail_url: '/logo/symbol_logo.png'
-                },
-                en: {
-                  title: 'Innovation at the Core of Our Brand',
-                  subtitle: 'Introducing the core values and innovation cases',
-                  thumbnail_url: '/logo/symbol_logo.png'
-                }
-              },
-              created_at: '2024-02-20',
-              published_date: '2024-02-20'
-            },
-            {
-              slug: 'building-trust-with-seniors',
-              content: {
-                ko: {
-                  title: '시니어와 함께 만들어가는 신뢰',
-                  subtitle: '고객의 목소리에 귀 기울이며 만들어가는 브랜드 스토리',
-                  thumbnail_url: '/logo/symbol_logo.png'
-                },
-                en: {
-                  title: 'Building Trust with Seniors',
-                  subtitle: 'Brand story built by listening to customer voices',
-                  thumbnail_url: '/logo/symbol_logo.png'
-                }
-              },
-              created_at: '2024-03-10',
-              published_date: '2024-03-10'
-            }
-          ];
-        }
+        // 브랜드 스토리 페이지와 동일한 방식으로 데이터 처리
+        const brandStories = (data.results || []).map((story: any) => {
+          const content = story.content?.[lang] || story.content?.ko || story.content?.en;
+          
+          return {
+            slug: story.slug,
+            title: content?.title || 'No Title',
+            subtitle: content?.subtitle || 'No Subtitle',
+            date: new Date(story.published_date || story.created_at).toLocaleDateString('ko-KR'),
+            thumbnail_url: content?.thumbnail_url || '/logo/nonImage_logo.png',
+            body: content?.body || 'No content available'
+          };
+        });
         
         setBrandStoryData(brandStories);
       })
       .catch(err => {
         console.error('Error fetching brand stories:', err);
-        // Set mock data on error
-        setBrandStoryData([
-          {
-            slug: 'our-journey-from-startup-to-leader',
-            content: {
-              ko: {
-                title: '스타트업에서 리더로: 우리의 여정',
-                subtitle: '작은 아이디어에서 시작하여 산업을 선도하기까지의 여정',
-                thumbnail_url: '/logo/symbol_logo.png'
-              },
-              en: {
-                title: 'From Startup to Leader: Our Journey',
-                subtitle: 'From a small idea to leading the industry',
-                thumbnail_url: '/logo/symbol_logo.png'
-              }
-            },
-            created_at: '2024-01-15',
-            published_date: '2024-01-15'
-          },
-          {
-            slug: 'innovation-at-the-core-of-our-brand',
-            content: {
-              ko: {
-                title: '브랜드의 핵심, 혁신',
-                subtitle: '브랜드의 핵심 가치와 혁신 사례를 소개합니다',
-                thumbnail_url: '/logo/symbol_logo.png'
-              },
-              en: {
-                title: 'Innovation at the Core of Our Brand',
-                subtitle: 'Introducing the core values and innovation cases',
-                thumbnail_url: '/logo/symbol_logo.png'
-              }
-            },
-            created_at: '2024-02-20',
-            published_date: '2024-02-20'
-          },
-          {
-            slug: 'building-trust-with-seniors',
-            content: {
-              ko: {
-                title: '시니어와 함께 만들어가는 신뢰',
-                subtitle: '고객의 목소리에 귀 기울이며 만들어가는 브랜드 스토리',
-                thumbnail_url: '/logo/symbol_logo.png'
-              },
-              en: {
-                title: 'Building Trust with Seniors',
-                subtitle: 'Brand story built by listening to customer voices',
-                thumbnail_url: '/logo/symbol_logo.png'
-              }
-            },
-            created_at: '2024-03-10',
-            published_date: '2024-03-10'
-          }
-        ]);
+        setBrandStoryData([]);
       });
   }, []);
 
@@ -708,6 +609,39 @@ const HomePage: React.FC = () => {
             style={{ transform: `translateX(-${currentIndex * 33.333}%)` }}
           >
             {items.map((item: any, idx: any) => {
+              // 브랜드 스토리 타입일 때는 이미 처리된 데이터 사용
+              if (type === 'brand-story') {
+                const thumbnailUrl = item.thumbnail_url || '/logo/nonImage_logo.png';
+                const title = item.title || 'No Title';
+                const description = item.subtitle || 'No description available';
+                
+                return (
+                  <div key={idx} className="w-1/3 flex-shrink-0 px-3">
+                    <div 
+                      onClick={() => window.location.href = `/${type}/${item.slug}`}
+                      className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 h-full cursor-pointer"
+                    >
+                      <img 
+                        src={thumbnailUrl}
+                        alt={title}
+                        className="w-full h-40 object-cover rounded-lg mb-4"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
+                      />
+                      <h3 className="text-lg font-bold mb-2 text-slate-800 line-clamp-2">
+                        {title}
+                      </h3>
+                      <p className="text-sm text-gray-600 line-clamp-2 mb-4 max-w-xs">
+                        {description}
+                      </p>
+                      <div className="flex justify-start items-center text-xs text-gray-500">
+                        <span>{item.date}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // 다른 타입들 (블로그, 언론보도 등)은 기존 방식 사용
               const itemContent = item.content?.[lang] || item.content?.ko || item.content?.en || item;
               const thumbnailUrl = itemContent.thumbnail_url || item.thumbnail || '/logo/nonImage_logo.png';
               const title = itemContent.title || item.title || 'No Title';
@@ -763,23 +697,49 @@ const HomePage: React.FC = () => {
         
         <div className="relative z-10 max-w-7xl mx-auto px-6 text-center text-white">
           <div className={`transform transition-all duration-1000 ${isVisible.hero ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 text-white leading-tight">
+            <div className="mb-8">
+              <span className="inline-block bg-[#bda191]/20 text-[#bda191] px-6 py-2 rounded-full text-sm font-medium mb-6 backdrop-blur">
+                {lang === 'ko' ? '시니어 라이프 혁신 기업' : 'Senior Life Innovation Company'}
+              </span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white leading-tight">
               {content.headline}
+              <br />
+              <span className="text-[#bda191] text-4xl md:text-6xl">{content.subheadline}</span>
             </h1>
-            <h2 className="text-2xl md:text-4xl font-light mb-6 text-rose-100">
-              {content.subheadline}
-            </h2>
-            <p className="text-lg md:text-xl mb-10 max-w-4xl mx-auto leading-relaxed text-gray-200"
-               dangerouslySetInnerHTML={{ __html: content.description }} />
+            <p className="text-xl md:text-2xl mb-12 max-w-4xl mx-auto leading-relaxed text-slate-200 font-light">
+              {content.description.split('\n').map((line: string, i: number, arr: string[]) => (
+                <React.Fragment key={i}>
+                  {line}
+                  {i < arr.length - 1 && <br />}
+                </React.Fragment>
+              ))}
+            </p>
+            
+            {/* CTA 버튼 */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+              <button 
+                onClick={() => window.location.href = '/products'}
+                className="px-8 py-4 bg-white text-slate-900 rounded-xl font-semibold hover:bg-slate-100 transition-all duration-300 shadow-lg"
+              >
+                {lang === 'ko' ? '제품 둘러보기' : 'Explore Products'}
+              </button>
+              <button 
+                onClick={() => window.location.href = '/inquiry'}
+                className="px-8 py-4 bg-[#bda191] text-white rounded-xl font-semibold hover:bg-[#a68b7a] transition-all duration-300 shadow-lg"
+              >
+                {lang === 'ko' ? '문의하기' : 'Contact Us'}
+              </button>
+            </div>
           </div>
           
-          {/* 통계 */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* 핵심 지표 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {content.stats.map((stat: any, idx: number) => (
               <div key={idx} className={`transform transition-all duration-1000 delay-${(idx + 1) * 200} ${isVisible.hero ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-5 border border-white/20">
-                  <div className="text-3xl font-bold text-orange-200 mb-2">{stat.number}</div>
-                  <div className="text-sm text-gray-300">{stat.label}</div>
+                <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+                  <div className="text-4xl font-bold text-white mb-3">{stat.number}</div>
+                  <div className="text-slate-300 leading-relaxed">{stat.label}</div>
                 </div>
               </div>
             ))}
@@ -787,18 +747,24 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 문제 정의 섹션 - 전체화면 */}
+      {/* 문제 정의 섹션 - 지그재그 레이아웃 */}
       <section 
         id="problems" 
         data-section 
-        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 relative overflow-hidden"
+        className="py-24 bg-white relative overflow-hidden"
       >
-        <div className="max-w-7xl mx-auto px-6 py-20">
-          <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible.problems ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-800">
-              {lang === 'ko' ? '우리가 해결하고자 하는 문제' : 'Problems We Aim to Solve'}
+        {/* 배경 장식 요소 */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#bda191]/5 rounded-full -translate-y-48 translate-x-48"></div>
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-slate-100 rounded-full translate-y-36 -translate-x-36"></div>
+        
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className={`text-center mb-20 transform transition-all duration-1000 ${isVisible.problems ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 text-slate-900">
+              {lang === 'ko' ? '우리가 해결하고자 하는' : 'Problems We'}
+              <br />
+              <span className="text-[#bda191]">{lang === 'ko' ? '문제' : 'Aim to Solve'}</span>
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto">
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
               {lang === 'ko' 
                 ? '시장은 Pain이 뚜렷했고, 대체제가 없고, 명확한 브랜딩을 하는 플레이어가 없었습니다.'
                 : 'The market had clear pain points, no alternatives, and no players with clear branding.'
@@ -806,161 +772,219 @@ const HomePage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* 지그재그 레이아웃 */}
+          <div className="space-y-32">
             {problems.map((problem: any, idx: number) => (
               <div 
                 key={idx} 
-                className={`transform transition-all duration-1000 delay-${idx * 200} ${isVisible.problems ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
+                className={`transform transition-all duration-1000 delay-${idx * 300} ${isVisible.problems ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
               >
-                <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1">
-                  <div className="text-4xl mb-4">{problem.icon}</div>
-                  <h3 className="text-lg font-bold mb-3 text-slate-800">{problem.title}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{problem.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 만보 워크메이트 섹션 - 전체화면 */}
-      <section 
-        id="manbo" 
-        data-section 
-        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-800/10 to-slate-700/20"></div>
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-white">
-          <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible.manbo ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
-              {manbo.title}
-            </h2>
-            <h3 className="text-xl md:text-2xl font-light mb-6 text-orange-200">{manbo.subtitle}</h3>
-            <p className="text-lg md:text-xl text-gray-300 max-w-5xl mx-auto leading-relaxed mb-6">
-              {manbo.description}
-            </p>
-            <div className="inline-block bg-orange-600/20 backdrop-blur-lg rounded-full px-5 py-2 border border-orange-400/30">
-              <span className="text-sm text-orange-200">{manbo.status}</span>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {manbo.features.map((feature: any, idx: number) => (
-              <div 
-                key={idx} 
-                className={`transform transition-all duration-1000 delay-${idx * 200} ${isVisible.manbo ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
-              >
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-500">
-                  <h4 className="text-lg font-bold mb-3 text-orange-200">{feature.title}</h4>
-                  <p className="text-sm text-gray-300 mb-4 leading-relaxed">{feature.description}</p>
-                  <ul className="space-y-2">
-                    {feature.details.map((detail: any, detailIdx: any) => (
-                      <li key={detailIdx} className="text-xs text-gray-400 flex items-start">
-                        <span className="text-orange-400 mr-2">•</span>
-                        {detail}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 보듬 기저귀 섹션 - 전체화면 */}
-      <section 
-        id="bodeum" 
-        data-section 
-        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-orange-50 to-stone-50 relative overflow-hidden"
-      >
-        <div className="max-w-7xl mx-auto px-6 py-20">
-          <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible.bodeum ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-800">
-              {bodeum.title}
-            </h2>
-            <h3 className="text-xl md:text-2xl font-light mb-6 text-rose-700">{bodeum.subtitle}</h3>
-            <p className="text-lg md:text-xl text-gray-600 max-w-5xl mx-auto leading-relaxed mb-4">
-              {bodeum.description}
-            </p>
-            <div className="text-rose-700 text-base md:text-lg font-semibold">
-              {bodeum.meaning}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {bodeum.features.map((feature: any, idx: number) => (
-              <div 
-                key={idx} 
-                className={`transform transition-all duration-1000 delay-${idx * 100} ${isVisible.bodeum ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
-              >
-                <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 text-center">
-                  <div className="text-3xl mb-3">{feature.icon}</div>
-                  <h4 className="text-lg font-bold mb-2 text-slate-800">{feature.title}</h4>
-                  <div className="text-sm text-gray-600">
-                    {feature.description.split(/<br\s*\/?>|\n/).map((line: any, i: any, arr: any[]) => (
-                      <React.Fragment key={i}>
-                        {line}
-                        {i < arr.length - 1 && <br />}
-                      </React.Fragment>
-                    ))}
+                <div className={`flex flex-col lg:flex-row items-center gap-12 ${
+                  idx % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
+                }`}>
+                  {/* 아이콘 영역 */}
+                  <div className="flex-shrink-0">
+                    <div className="w-32 h-32 md:w-40 md:h-40 bg-gradient-to-br from-[#bda191] to-[#a68b7a] rounded-3xl flex items-center justify-center shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                      <span className="text-5xl md:text-6xl">{problem.icon}</span>
+                    </div>
+                  </div>
+                  
+                  {/* 텍스트 영역 */}
+                  <div className={`flex-1 ${idx % 2 === 0 ? 'lg:text-left' : 'lg:text-right'} text-center lg:text-left`}>
+                    <h3 className="text-2xl md:text-3xl font-bold mb-4 text-slate-900 leading-tight">
+                      {problem.title}
+                    </h3>
+                    <p className="text-lg text-slate-600 leading-relaxed max-w-2xl">
+                      {problem.description}
+                    </p>
+                    {/* 데코레이션 라인 */}
+                    <div className={`mt-6 h-1 w-20 bg-[#bda191] ${idx % 2 === 0 ? 'lg:ml-0' : 'lg:ml-auto'} mx-auto lg:mx-0`}></div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className={`transform transition-all duration-1000 delay-300 ${isVisible.bodeum ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-              <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl">
-                <h4 className="text-2xl font-bold mb-6 text-purple-800">{lang === 'ko' ? '현재 라인업' : 'Current Lineup'}</h4>
-                <ul className="space-y-3">
-                  {bodeum.lineup.map((item: any, idx: any) => (
-                    <li key={idx} className="flex items-center text-gray-700">
-                      <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        </div>
+      </section>
+
+      {/* 만보 워크메이트 섹션 - 자연스러운 제품 소개 */}
+      <section 
+        id="manbo" 
+        data-section 
+        className="py-20 bg-gray-50"
+      >
+        <div className="max-w-6xl mx-auto px-6">
+          {/* 제품 헤더 */}
+          <div className={`mb-16 transform transition-all duration-1000 ${isVisible.manbo ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            <div className="flex items-center mb-4">
+              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                {manbo.status}
+              </span>
             </div>
-            
-            <div className={`transform transition-all duration-1000 delay-400 ${isVisible.bodeum ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-              <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl">
-                <h4 className="text-2xl font-bold mb-6 text-purple-800">{lang === 'ko' ? '비즈니스 모델' : 'Business Model'}</h4>
-                <div className="text-gray-600 mb-6">
-                  {bodeum.business.split(/<br\s*\/?>|\n/).map((line: string, i: number, arr: string[]) => (
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
+              {manbo.title}
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl">
+              {manbo.subtitle}
+            </p>
+          </div>
+          
+          {/* 제품 설명과 특징을 나란히 배치 */}
+          <div className="grid lg:grid-cols-2 gap-12 mb-16">
+            {/* 왼쪽: 제품 설명 */}
+            <div className={`transform transition-all duration-1000 delay-200 ${isVisible.manbo ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+              <div className="prose prose-lg">
+                <p className="text-gray-700 leading-relaxed mb-6">
+                  {manbo.description.split('\n').map((line: string, i: number, arr: string[]) => (
                     <React.Fragment key={i}>
                       {line}
                       {i < arr.length - 1 && <br />}
                     </React.Fragment>
                   ))}
+                </p>
+                <div className="bg-blue-50 p-6 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-3">핵심 혁신 기술</h4>
+                  <p className="text-blue-800 text-sm">
+                    AI 센서와 IoT 기술을 결합한 스마트 보행 보조 시스템으로, 
+                    사용자의 보행 패턴을 학습하여 최적의 지원을 제공합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* 오른쪽: 제품 특징 목록 */}
+            <div className={`transform transition-all duration-1000 delay-400 ${isVisible.manbo ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+              <h3 className="text-xl font-semibold mb-6 text-gray-900">주요 특징</h3>
+              <div className="space-y-6">
+                {manbo.features.map((feature: any, idx: number) => (
+                  <div key={idx} className="border-l-4 border-blue-500 pl-6">
+                    <h4 className="font-semibold text-gray-900 mb-2">{feature.title}</h4>
+                    <p className="text-gray-600 text-sm mb-3">{feature.description}</p>
+                    <ul className="space-y-1">
+                      {feature.details.slice(0, 2).map((detail: any, detailIdx: any) => (
+                        <li key={detailIdx} className="text-xs text-gray-500 flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          {detail}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* 하단 CTA */}
+          <div className={`text-center transform transition-all duration-1000 delay-600 ${isVisible.manbo ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            <button 
+              onClick={() => window.location.href = '/products/manbo-walker'}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors mr-4"
+            >
+              제품 자세히 보기
+            </button>
+            <button 
+              onClick={() => window.location.href = '/inquiry'}
+              className="border border-blue-600 text-blue-600 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+            >
+              사전 문의하기
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 보듬 기저귀 섹션 - 자연스러운 제품 소개 */}
+      <section 
+        id="bodeum" 
+        data-section 
+        className="py-20 bg-white"
+      >
+        <div className="max-w-6xl mx-auto px-6">
+          {/* 제품 헤더 */}
+          <div className={`mb-16 transform transition-all duration-1000 ${isVisible.bodeum ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
+              {bodeum.title} - {bodeum.subtitle}
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mb-4">
+              {bodeum.description.split('\n').map((line: string, i: number, arr: string[]) => (
+                <React.Fragment key={i}>
+                  {line}
+                  {i < arr.length - 1 && <br />}
+                </React.Fragment>
+              ))}
+            </p>
+            <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
+              <p className="text-orange-800 font-medium">{bodeum.meaning}</p>
+            </div>
+          </div>
+          
+          {/* 제품 특징과 라인업을 나란히 배치 */}
+          <div className="grid lg:grid-cols-2 gap-12 mb-16">
+            {/* 왼쪽: 제품 특징 */}
+            <div className={`transform transition-all duration-1000 delay-200 ${isVisible.bodeum ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+              <h3 className="text-xl font-semibold mb-6 text-gray-900">제품 특징</h3>
+              <div className="space-y-4">
+                {bodeum.features.map((feature: any, idx: number) => (
+                  <div key={idx} className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-4">{feature.icon}</span>
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-2">{feature.title}</h4>
+                        <p className="text-gray-600 text-sm">
+                          {feature.description.split('\n').map((line: any, i: any, arr: any[]) => (
+                            <React.Fragment key={i}>
+                              {line}
+                              {i < arr.length - 1 && <br />}
+                            </React.Fragment>
+                          ))}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* 오른쪽: 라인업과 비즈니스 정보 */}
+            <div className={`transform transition-all duration-1000 delay-400 ${isVisible.bodeum ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+              <div className="space-y-8">
+                {/* 라인업 */}
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 text-gray-900">제품 라인업</h3>
+                  <div className="space-y-2">
+                    {bodeum.lineup.map((item: any, idx: any) => (
+                      <div key={idx} className="flex items-center p-3 bg-orange-50 rounded-lg">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
+                        <span className="text-gray-800">{item}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
-                {/* 제품 링크 */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-200">
-                  <button 
-                    onClick={() => window.location.href = '/products/bodeum-diaper'}
-                    className="flex-1 inline-flex items-center justify-center px-6 py-3 text-base font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
-                  >
-                    <svg className="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    {lang === 'ko' ? '제품 보러가기' : 'View Product'}
-                  </button>
-                  <button 
-                    onClick={() => window.open('https://bodume.com/', '_blank')}
-                    className="flex-1 inline-flex items-center justify-center px-6 py-3 text-base font-semibold bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
-                  >
-                    <svg className="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    {lang === 'ko' ? '제품 구매하러가기' : 'Buy Product'}
-                    <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </button>
+                {/* 비즈니스 모델 */}
+                <div className="bg-gray-900 p-6 rounded-lg text-white">
+                  <h3 className="text-lg font-semibold mb-4">비즈니스 전략</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-6">
+                    {bodeum.business.split('\n').map((line: string, i: number, arr: string[]) => (
+                      <React.Fragment key={i}>
+                        {line}
+                        {i < arr.length - 1 && <br />}
+                      </React.Fragment>
+                    ))}
+                  </p>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => window.location.href = '/products/bodeum-diaper'}
+                      className="flex-1 bg-white text-gray-900 px-4 py-2 rounded font-medium text-sm hover:bg-gray-100 transition-colors"
+                    >
+                      제품 상세보기
+                    </button>
+                    <button 
+                      onClick={() => window.open('https://bodume.com/', '_blank')}
+                      className="flex-1 bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-orange-700 transition-colors"
+                    >
+                      온라인 구매 →
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -968,141 +992,273 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 팀 소개 섹션 - 전체화면 */}
+      {/* 팀 소개 섹션 - 간단한 소개 */}
       <section 
         id="team" 
         data-section 
-        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-gray-900 to-slate-900 relative overflow-hidden"
+        className="py-20 bg-gradient-to-br from-slate-50 to-stone-100"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-800/10 to-slate-700/20"></div>
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-white">
-          <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible.team ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <h2 className="text-2xl md:text-4xl font-bold mb-6 text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* 섹션 헤더 */}
+          <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible.team ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-slate-800">
+              {lang === 'ko' ? '전문성을 갖춘 팀' : 'Expert Team'}
+            </h2>
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
               {team.title}
-            </h2>
-          </div>
-          
-          {/* 핵심 팀 */}
-          <div className="mb-20">
-            <h3 className={`text-2xl md:text-3xl font-bold mb-8 text-center text-orange-300 transform transition-all duration-1000 delay-200 ${isVisible.team ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-              {lang === 'ko' ? '핵심 팀' : 'Core Team'}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {team.coreTeam.map((member: any, idx: any) => (
-                <div 
-                  key={idx} 
-                  className={`transform transition-all duration-1000 delay-${(idx + 1) * 200} ${isVisible.team ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
-                >
-                  <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 hover:bg-white/15 transition-all duration-500 h-full">
-                    <div className="flex items-center mb-6">
-                      <img src={member.img} alt={member.name} className="w-20 h-20 rounded-full object-cover border-4 border-orange-300 mr-6" />
-                      <div>
-                        <h4 className="text-2xl font-bold text-white">{member.name}</h4>
-                        <span className="text-orange-300 font-semibold">{member.role}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-3 text-gray-300">
-                      <p><span className="text-orange-300 font-semibold">{lang === 'ko' ? '학력:' : 'Education:'}</span> {member.background}</p>
-                      <p><span className="text-orange-300 font-semibold">{lang === 'ko' ? '경력:' : 'Experience:'}</span> {member.experience}</p>
-                      <p><span className="text-orange-300 font-semibold">{lang === 'ko' ? '성과:' : 'Achievements:'}</span> {member.achievements}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* 자문위원 */}
-          <div>
-            <h3 className={`text-2xl md:text-3xl font-bold mb-8 text-center text-orange-300 transform transition-all duration-1000 delay-600 ${isVisible.team ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-              {lang === 'ko' ? '자문위원' : 'Advisors'}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {team.advisors.map((advisor: any, idx: any) => (
-                <div 
-                  key={idx} 
-                  className={`transform transition-all duration-1000 delay-${(idx + 7) * 100} ${isVisible.team ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
-                >
-                  <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-500 text-center h-full flex flex-col">
-                    <img src={advisor.img} alt={advisor.name} className="w-16 h-16 rounded-full object-cover border-3 border-orange-300 mx-auto mb-4" />
-                    <h4 className="text-lg font-bold text-white mb-1">{advisor.name}</h4>
-                    <span className="text-orange-300 text-sm font-semibold block mb-3">{advisor.role}</span>
-                    <div className="text-gray-400 text-sm mb-2">
-                      <ul className="list-disc pl-5 text-gray-400 text-sm text-left">
-                        {advisor.background.split(',').map((item: any, i: any) => <li key={i}>{item.trim()}</li>)}
-                      </ul>
-                    </div>
-                    <div className="text-gray-400 text-xs">
-                      <ul className="list-disc pl-5 text-gray-400 text-xs text-left">
-                        {advisor.specialty.split(',').map((item: any, i: any) => <li key={i}>{item.trim()}</li>)}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 회사 연혁 섹션 - 전체화면 */}
-      <section 
-        id="history" 
-        data-section 
-        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-slate-50 to-orange-50 relative overflow-hidden"
-      >
-        <div className="max-w-7xl mx-auto px-6 py-20">
-          <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible.history ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-800">
-              {lang === 'ko' ? '한 걸음씩 성실히 걸어온' : 'Step by Step, Walking Steadily'}
-            </h2>
-            <h3 className="text-xl md:text-2xl font-light mb-6 text-orange-700">
-              {lang === 'ko' ? '소나버스의 여정' : 'SONAVERSE Journey'}
-            </h3>
-            <p className="text-lg text-gray-600 max-w-4xl mx-auto">
-              {lang === 'ko' 
-                ? '앞으로도 시니어와 함께 걸어가겠습니다.'
-                : 'We will continue walking together with seniors.'
-              }
             </p>
           </div>
           
-          <div className="relative">
-            {/* 타임라인 선 */}
-            <div className="absolute left-8 md:left-1/2 transform md:-translate-x-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-slate-600 to-orange-600 rounded-full"></div>
-            
-            <div className="space-y-16">
-              {history.map((item: any, idx: any) => (
-                <div 
-                  key={idx} 
-                  className={`relative transform transition-all duration-1000 delay-${idx * 200} ${isVisible.history ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
-                >
-                  <div className={`flex flex-col md:flex-row items-center ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
-                    {/* 년도 원 */}
-                    <div className="absolute left-8 md:left-1/2 transform md:-translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-gradient-to-r from-slate-600 to-orange-600 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
-                      <span className="text-white font-bold text-sm">{item.year}</span>
+          {/* 코어 팀 섹션 */}
+          <div className="mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {team.coreTeam.map((member: any, idx: any) => (
+                <div key={idx} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                  {/* 헤더 영역 */}
+                  <div className="bg-gradient-to-r from-slate-700 to-slate-800 p-6 text-white">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-white/20 rounded-full overflow-hidden flex-shrink-0">
+                        <img 
+                          src={member.img} 
+                          alt={member.name}
+                          className="w-full h-full object-cover"
+                          onError={(e: any) => e.target.style.display = 'none'}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold mb-1">{member.name}</h3>
+                        <p className="text-sm text-slate-200 font-medium">{member.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 상세 정보 영역 */}
+                  <div className="p-6">
+                    {/* 학력/배경 */}
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-slate-800 mb-2 flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-[#bda191]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                        </svg>
+                        {lang === 'ko' ? '학력' : 'Education'}
+                      </h4>
+                      <ul className="text-xs text-gray-700 space-y-1">
+                        {member.background.split(',').map((item: string, bgIdx: number) => (
+                          <li key={bgIdx} className="flex items-start">
+                            <div className="w-1.5 h-1.5 bg-[#bda191] rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                            <span className="leading-relaxed">{item.trim()}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                     
-                    {/* 내용 카드 */}
-                    <div className={`flex-1 ml-24 md:ml-0 ${idx % 2 === 0 ? 'md:pr-16' : 'md:pl-16'}`}>
-                      <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-500">
-                        <h4 className="text-xl font-bold mb-3 text-slate-800">{item.title}</h4>
-                        <p className="text-gray-600 mb-6">{item.description}</p>
-                        <ul className="space-y-2">
-                          {item.events.map((event: any, eventIdx: any) => (
-                            <li key={eventIdx} className="flex items-start text-gray-700">
-                              <span className="w-2 h-2 bg-orange-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                              <span className="text-sm">{event}</span>
+                    {/* 경력/경험 */}
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-slate-800 mb-2 flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-[#bda191]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6" />
+                        </svg>
+                        {lang === 'ko' ? '경력' : 'Experience'}
+                      </h4>
+                      <ul className="text-xs text-gray-700 space-y-1">
+                        {member.experience.split(',').map((item: string, expIdx: number) => (
+                          <li key={expIdx} className="flex items-start">
+                            <div className="w-1.5 h-1.5 bg-[#bda191] rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                            <span className="leading-relaxed">{item.trim()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    {/* 주요 성과 */}
+                    {member.achievements && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-slate-800 mb-2 flex items-center">
+                          <svg className="w-4 h-4 mr-2 text-[#bda191]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                          </svg>
+                          {lang === 'ko' ? '주요 성과' : 'Key Achievements'}
+                        </h4>
+                        <ul className="text-xs text-gray-700 space-y-1">
+                          {member.achievements.split(',').map((item: string, achIdx: number) => (
+                            <li key={achIdx} className="flex items-start">
+                              <div className="w-1.5 h-1.5 bg-[#bda191] rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                              <span className="leading-relaxed">{item.trim()}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </div>
+          
+          {/* 자문위원 섹션 */}
+          {showFullTeam && team.advisors && team.advisors.length > 0 && (
+            <div className="mt-16">
+              <h3 className="text-2xl font-bold text-slate-700 mb-8 text-center">
+                {lang === 'ko' ? '자문위원' : 'Advisory Board'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {team.advisors.map((advisor: any, idx: any) => (
+                  <div key={idx} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    {/* 프로필 이미지 */}
+                    <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
+                      <img 
+                        src={advisor.img} 
+                        alt={advisor.name}
+                        className="w-full h-full object-cover"
+                        onError={(e: any) => e.target.style.display = 'none'}
+                      />
+                    </div>
+                    
+                    {/* 정보 */}
+                    <div className="p-6">
+                      <h4 className="text-lg font-bold text-slate-800 mb-2">{advisor.name}</h4>
+                      <p className="text-sm text-[#bda191] font-semibold mb-3">{advisor.role}</p>
+                      <p className="text-sm text-gray-600 mb-3 leading-relaxed">{advisor.background}</p>
+                      {advisor.specialty && (
+                        <div className="pt-3 border-t border-gray-100">
+                          <p className="text-xs text-gray-500 font-medium">{lang === 'ko' ? '전문분야' : 'Specialty'}</p>
+                          <p className="text-sm text-gray-700">{advisor.specialty}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* 더보기 버튼 */}
+          {(team.coreTeam.length > 2 || (team.advisors && team.advisors.length > 0)) && (
+            <div className="text-center mt-12">
+              <button 
+                onClick={() => setShowFullTeam(!showFullTeam)}
+                className="inline-flex items-center px-8 py-4 bg-slate-800 text-white rounded-full font-semibold hover:bg-slate-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                {showFullTeam 
+                  ? (lang === 'ko' ? '간단히 보기' : 'Show Less')
+                  : (lang === 'ko' ? '팀 전체 보기' : 'View Full Team')
+                }
+                <svg className={`ml-2 w-5 h-5 transform transition-transform ${showFullTeam ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 회사 연혁 섹션 - 간단한 연혁 */}
+      <section 
+        id="history" 
+        data-section 
+        className="py-20 bg-white"
+      >
+        <div className="max-w-6xl mx-auto px-6">
+          {/* 섹션 헤더 */}
+          <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible.history ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
+              {lang === 'ko' ? '소나버스의 성장 여정' : 'SONAVERSE Growth Journey'}
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              {lang === 'ko' 
+                ? '2022년 설립 이후 지속적인 성장을 이어가고 있습니다.'
+                : 'We have been growing continuously since our establishment in 2022.'
+              }
+            </p>
+          </div>
+          
+          {/* 연혁 섹션 - 기존 구조 유지하면서 일부만 표시 */}
+          <div className="relative mb-8">
+            {/* 세로 연결선 */}
+            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+            
+            <div className="space-y-12">
+              {(showFullHistory ? history : history.filter((item: any) => parseInt(item.year) >= 2022 && parseInt(item.year) <= 2023)).map((item: any, idx: any) => (
+                <div 
+                  key={idx} 
+                  className="relative transform transition-all duration-1000"
+                >
+                  {/* 년도 표시 */}
+                  <div className="absolute left-0 w-12 h-12 bg-[#bda191] rounded-2xl flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-sm">{item.year}</span>
+                  </div>
+                  
+                  {/* 내용 카드 */}
+                  <div className="ml-20">
+                    <div className="bg-slate-50 rounded-3xl p-8 hover:bg-white hover:shadow-lg transition-all duration-500 border border-slate-100">
+                      <div className="mb-6">
+                        <h4 className="text-2xl font-bold text-slate-900">
+                          {item.title}
+                        </h4>
+                      </div>
+                      
+                      <p className="text-slate-600 mb-6 leading-relaxed">
+                        {item.description}
+                      </p>
+                      
+                      {/* 주요 이벤트 */}
+                      {item.events && Array.isArray(item.events) && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {item.events.map((event: any, eventIdx: any) => (
+                            <div key={eventIdx} className="flex items-start p-4 bg-white rounded-xl shadow-sm">
+                              <div className="w-2 h-2 bg-[#bda191] rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                              <span className="text-sm text-slate-700 leading-relaxed">{event}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* 미래 포인트 - 전체 보기일 때만 표시 */}
+            {showFullHistory && (
+              <div className="relative">
+                <div className="absolute left-0 w-12 h-12 bg-slate-300 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-sm">∞</span>
+                </div>
+                <div className="ml-20">
+                  <div className="bg-gradient-to-r from-[#bda191] to-[#a68b7a] rounded-3xl p-8 text-white">
+                    <h4 className="text-2xl font-bold mb-4">
+                      {lang === 'ko' ? '계속되는 여정' : 'Continuing Journey'}
+                    </h4>
+                    <p className="text-lg opacity-90">
+                      {lang === 'ko' 
+                        ? '시니어 라이프 혁신을 위한 소나버스의 도전은 계속됩니다.'
+                        : 'SONAVERSE\'s challenge to innovate senior life continues.'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* 더보기 버튼 */}
+          {history.filter((item: any) => parseInt(item.year) < 2022 || parseInt(item.year) > 2023).length > 0 && (
+            <div className="text-center">
+              <button 
+                onClick={() => setShowFullHistory(!showFullHistory)}
+                className="bg-gray-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors inline-flex items-center"
+              >
+                {showFullHistory 
+                  ? (lang === 'ko' ? '간단히 보기' : 'Show Less')
+                  : (lang === 'ko' ? '전체 연혁 보기' : 'View Full History')
+                }
+                <svg className={`ml-2 w-4 h-4 transform transition-transform ${showFullHistory ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -1121,8 +1277,114 @@ const HomePage: React.FC = () => {
               {lang === 'ko' ? '소나버스의 소식을 확인해보세요' : 'Check out the latest news about SONAVERSE'}
             </p>
           </div>
+          
           <div className={`transform transition-all duration-1000 delay-200 ${isVisible.press ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <ContentCarousel items={pressData} type="press" />
+            {pressData.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">{lang === 'ko' ? '언론보도를 불러오는 중...' : 'Loading press releases...'}</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden backdrop-blur-lg">
+                {/* 헤더 */}
+                <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-8 py-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H14" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white">
+                          {lang === 'ko' ? '최신 언론보도' : 'Latest Press'}
+                        </h3>
+                        <p className="text-sm text-slate-300">
+                          {lang === 'ko' ? '소나버스의 주요 뉴스' : 'Major news from SONAVERSE'}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => window.location.href = '/press'}
+                      className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-all duration-300 border border-white/20"
+                    >
+                      {lang === 'ko' ? '전체보기' : 'View All'}
+                    </button>
+                  </div>
+                </div>
+                
+                {/* 리스트 */}
+                <div className="divide-y divide-slate-100">
+                  {pressData.slice(0, 5).map((item: any, idx: number) => {
+                    const itemContent = item.content?.[lang] || item.content?.ko || item.content?.en || item;
+                    const title = itemContent.title || item.title || 'No Title';
+                    const pressName = typeof item.press_name === 'object' && item.press_name
+                      ? (item.press_name[lang] || item.press_name.ko || item.press_name.en || '')
+                      : (item.press_name || '소나버스');
+                    const date = new Date(item.published_date || item.created_at || Date.now()).toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US');
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        onClick={() => window.location.href = `/press/${item.slug}`}
+                        className="px-8 py-6 hover:bg-slate-50 transition-all duration-300 cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0 pr-6">
+                            <div className="flex items-center space-x-4">
+                              <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-[#bda191] to-[#a68b7a] rounded-xl flex items-center justify-center">
+                                <span className="text-white font-bold text-sm">{idx + 1}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-lg font-semibold text-slate-800 group-hover:text-[#bda191] transition-colors duration-300 truncate">
+                                  {title}
+                                </h4>
+                                <div className="flex items-center space-x-3 mt-1">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#bda191]/10 text-[#bda191]">
+                                    {pressName}
+                                  </span>
+                                  <span className="text-sm text-slate-500">{date}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0">
+                            <svg 
+                              className="w-6 h-6 text-slate-400 group-hover:text-[#bda191] group-hover:translate-x-1 transition-all duration-300" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* 하단 액션 */}
+                <div className="px-8 py-6 bg-slate-50 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-slate-600">
+                      {lang === 'ko' 
+                        ? `총 ${pressData.length}개의 언론보도` 
+                        : `Total ${pressData.length} press releases`
+                      }
+                    </div>
+                    <button 
+                      onClick={() => window.location.href = '/press'}
+                      className="inline-flex items-center text-sm font-medium text-[#bda191] hover:text-[#a68b7a] transition-colors duration-300"
+                    >
+                      {lang === 'ko' ? '모든 언론보도 보기' : 'View all press releases'}
+                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -1133,17 +1395,141 @@ const HomePage: React.FC = () => {
         data-section 
         className="py-20 bg-gradient-to-br from-rose-50 to-stone-50 relative overflow-hidden"
       >
-        <div className="max-w-7xl mx-auto px-6">
-          <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible.blog ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+        {/* 배경 장식 */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-rose-200/20 to-transparent rounded-full -translate-y-48 -translate-x-48"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-tl from-stone-200/30 to-transparent rounded-full translate-y-40 translate-x-40"></div>
+        
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible.blog ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
             <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-800">
               {lang === 'ko' ? '블로그' : 'Blog'}
             </h2>
-            <p className="text-lg text-gray-600 mb-8">
-              {lang === 'ko' ? '소나버스의 인사이트를 만나보세요' : 'Discover insights from SONAVERSE'}
+            <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+              {lang === 'ko' ? '시니어 라이프 혁신에 대한 깊이 있는 통찰과 전문가 의견을 만나보세요' : 'Discover deep insights and expert opinions on senior life innovation'}
             </p>
           </div>
+          
           <div className={`transform transition-all duration-1000 delay-200 ${isVisible.blog ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <ContentCarousel items={blogData} type="blog" />
+            {blogData.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">{lang === 'ko' ? '블로그 포스트를 불러오는 중...' : 'Loading blog posts...'}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* 메인 포스트 (첫 번째) */}
+                {blogData.length > 0 && (
+                  <div className="lg:col-span-2">
+                    {(() => {
+                      const mainPost = blogData[0];
+                      const itemContent = mainPost.content?.[lang] || mainPost.content?.ko || mainPost.content?.en || mainPost;
+                      const title = itemContent.title || mainPost.title || 'No Title';
+                      const description = itemContent.subtitle || mainPost.summary || mainPost.excerpt || itemContent.description || 'No description available';
+                      const thumbnailUrl = itemContent.thumbnail_url || mainPost.thumbnail || '/logo/nonImage_logo.png';
+                      const date = new Date(mainPost.published_date || mainPost.created_at || Date.now()).toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US');
+                      
+                      return (
+                        <div 
+                          onClick={() => window.location.href = `/blog/${mainPost.slug}`}
+                          className="group bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden hover:shadow-2xl transition-all duration-500 cursor-pointer transform hover:-translate-y-2"
+                        >
+                          <div className="relative h-80 overflow-hidden">
+                            <img 
+                              src={thumbnailUrl}
+                              alt={title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                              onError={(e) => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                            <div className="absolute top-6 left-6">
+                              <span className="inline-flex items-center px-4 py-2 bg-white/90 backdrop-blur-sm text-slate-800 rounded-full text-sm font-semibold">
+                                {lang === 'ko' ? '특집 기사' : 'Featured'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-8">
+                            <div className="flex items-center space-x-4 mb-4">
+                              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>{date}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span>{lang === 'ko' ? '소나버스' : 'SONAVERSE'}</span>
+                              </div>
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-800 mb-4 group-hover:text-rose-600 transition-colors duration-300 leading-tight">
+                              {title}
+                            </h3>
+                            <p className="text-gray-600 leading-relaxed mb-6 line-clamp-3">
+                              {description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+                
+                {/* 사이드 포스트들 */}
+                <div className="space-y-6">
+                  {blogData.slice(1, 4).map((post: any, idx: number) => {
+                    const itemContent = post.content?.[lang] || post.content?.ko || post.content?.en || post;
+                    const title = itemContent.title || post.title || 'No Title';
+                    const description = itemContent.subtitle || post.summary || post.excerpt || itemContent.description || 'No description available';
+                    const thumbnailUrl = itemContent.thumbnail_url || post.thumbnail || '/logo/nonImage_logo.png';
+                    const date = new Date(post.published_date || post.created_at || Date.now()).toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US');
+                    
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={() => window.location.href = `/blog/${post.slug}`}
+                        className="group bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
+                      >
+                        <div className="flex">
+                          <div className="w-32 h-32 flex-shrink-0 relative overflow-hidden">
+                            <img 
+                              src={thumbnailUrl}
+                              alt={title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                              onError={(e) => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
+                            />
+                          </div>
+                          <div className="flex-1 p-6">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
+                              <span className="text-xs text-gray-500">{date}</span>
+                            </div>
+                            <h4 className="text-lg font-semibold text-slate-800 mb-2 group-hover:text-rose-600 transition-colors duration-300 line-clamp-2">
+                              {title}
+                            </h4>
+                            <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                              {description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* 하단 액션 */}
+            <div className="text-center mt-12">
+              <button 
+                onClick={() => window.location.href = '/blog'}
+                className="inline-flex items-center px-8 py-4 bg-slate-800 text-white rounded-2xl font-semibold hover:bg-slate-900 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                {lang === 'ko' ? '모든 블로그 포스트 보기' : 'View All Blog Posts'}
+                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -1154,112 +1540,270 @@ const HomePage: React.FC = () => {
         data-section 
         className="py-20 bg-gradient-to-br from-stone-50 to-slate-100 relative overflow-hidden"
       >
-        <div className="max-w-7xl mx-auto px-6">
-          <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible.brandStory ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+        {/* 배경 장식 */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-amber-200/20 to-transparent rounded-full -translate-y-48 translate-x-48"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-stone-300/30 to-transparent rounded-full translate-y-40 -translate-x-40"></div>
+        
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible['brand-story'] ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl mb-6 shadow-lg">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
             <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-800">
               {lang === 'ko' ? '브랜드 스토리' : 'Brand Story'}
             </h2>
-            <p className="text-lg text-gray-600 mb-8">
-              {lang === 'ko' ? '소나버스의 이야기를 들어보세요' : 'Listen to the story of SONAVERSE'}
+            <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+              {lang === 'ko' ? '소나버스가 걸어온 혁신의 여정과 미래를 향한 비전을 만나보세요' : 'Discover SONAVERSE\'s journey of innovation and vision for the future'}
             </p>
           </div>
-          <div className={`transform transition-all duration-1000 delay-200 ${isVisible.brandStory ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <ContentCarousel items={brandStoryData} type="brand-story" />
+          
+          <div className={`transform transition-all duration-1000 delay-200 ${isVisible['brand-story'] ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+            {brandStoryData.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">{lang === 'ko' ? '브랜드 스토리를 불러오는 중...' : 'Loading brand stories...'}</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* 타임라인 스타일 레이아웃 */}
+                {brandStoryData.slice(0, 3).map((story: any, idx: number) => (
+                  <div key={idx} className={`flex flex-col lg:flex-row items-center gap-8 ${idx % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
+                    {/* 이미지 영역 */}
+                    <div className="lg:w-1/2 relative">
+                      <div 
+                        onClick={() => window.location.href = `/brand-story/${story.slug}`}
+                        className="group relative overflow-hidden rounded-3xl shadow-2xl cursor-pointer transform hover:-translate-y-2 transition-all duration-500"
+                      >
+                        <div className="aspect-[4/3] relative">
+                          <img 
+                            src={story.thumbnail_url || '/logo/nonImage_logo.png'}
+                            alt={story.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent group-hover:from-black/70 transition-all duration-500"></div>
+                        </div>
+                        
+                        {/* 호버 오버레이 */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg">
+                            <span className="text-slate-800 font-semibold">
+                              {lang === 'ko' ? '스토리 보기' : 'View Story'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 장식 요소 */}
+                      <div className={`absolute -top-4 ${idx % 2 === 0 ? '-right-4' : '-left-4'} w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full opacity-20`}></div>
+                    </div>
+                    
+                    {/* 콘텐츠 영역 */}
+                    <div className={`lg:w-1/2 ${idx % 2 === 1 ? 'lg:text-right' : 'lg:text-left'} text-center lg:text-left`}>
+                      <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-200 backdrop-blur-lg">
+                        {/* 날짜 배지 */}
+                        <div className={`inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 rounded-full text-sm font-semibold mb-4`}>
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          {story.date}
+                        </div>
+                        
+                        {/* 제목 */}
+                        <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-4 leading-tight">
+                          {story.title}
+                        </h3>
+                        
+                        {/* 부제목 */}
+                        <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                          {story.subtitle}
+                        </p>
+                        
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* 추가 스토리가 있는 경우 컴팩트하게 표시 */}
+                {brandStoryData.length > 3 && (
+                  <div className="mt-12">
+                    <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-8">
+                      <div className="text-center mb-6">
+                        <h4 className="text-xl font-bold text-slate-800 mb-2">
+                          {lang === 'ko' ? '더 많은 스토리' : 'More Stories'}
+                        </h4>
+                        <p className="text-gray-600">
+                          {lang === 'ko' ? '소나버스의 다양한 이야기들을 만나보세요' : 'Discover more stories from SONAVERSE'}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {brandStoryData.slice(3, 6).map((story: any, idx: number) => (
+                          <div 
+                            key={idx}
+                            onClick={() => window.location.href = `/brand-story/${story.slug}`}
+                            className="group bg-slate-50 rounded-2xl p-6 hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer border border-slate-100"
+                          >
+                            <div className="flex items-start space-x-4">
+                              <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex-shrink-0 overflow-hidden">
+                                <img 
+                                  src={story.thumbnail_url || '/logo/nonImage_logo.png'}
+                                  alt={story.title}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png'; }}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h5 className="text-lg font-semibold text-slate-800 mb-2 group-hover:text-amber-600 transition-colors duration-300 line-clamp-2">
+                                  {story.title}
+                                </h5>
+                                <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                                  {story.subtitle}
+                                </p>
+                                <div className="text-xs text-gray-500">{story.date}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* 하단 액션 */}
+            <div className="text-center mt-12">
+              <button 
+                onClick={() => window.location.href = '/brand-story'}
+                className="inline-flex items-center px-8 py-4 bg-slate-800 text-white rounded-2xl font-semibold hover:bg-slate-900 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                {lang === 'ko' ? '모든 브랜드 스토리 보기' : 'View All Brand Stories'}
+                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 비즈니스 모델 섹션 - 전체화면 */}
+      {/* 비즈니스 모델 섹션 */}
       <section 
         id="business" 
         data-section 
-        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-orange-50 to-stone-50 relative overflow-hidden"
+        className="py-20 bg-white"
       >
-        <div className="max-w-7xl mx-auto px-6 py-20">
-          <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible.business ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-slate-800">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-slate-800 mb-6">
               {business.title}
             </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              {lang === 'ko' ? '소나버스의 혁신적인 비즈니스 모델과 함께 성장하세요' : 'Grow with SONAVERSE\'s innovative business model'}
+            </p>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
             {/* B2B */}
-            <div className={`transform transition-all duration-1000 delay-200 ${isVisible.business ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-              <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl h-full">
-                <h3 className="text-2xl font-bold mb-4 text-slate-800">{business.b2b.title}</h3>
-                <div className="text-gray-600 mb-6">
-                  {business.b2b.description.split(/<br\s*\/?>|\n/).map((line: string, i: number, arr: string[]) => (
-                    <React.Fragment key={i}>
-                      {line}
-                      {i < arr.length - 1 && <br />}
-                    </React.Fragment>
-                  ))}
+            <div className="bg-gray-50 rounded-lg p-8">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-[#bda191] rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
                 </div>
-                <ul className="space-y-3">
-                  {business.b2b.advantages.map((advantage: any, idx: number) => (
-                    <li key={idx} className="flex items-start text-gray-700">
-                      <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span className="text-sm">{advantage}</span>
-                    </li>
-                  ))}
-                </ul>
+                <h3 className="text-2xl font-bold text-slate-800">{business.b2b.title}</h3>
+              </div>
+              <div className="text-gray-600 mb-6 leading-relaxed">
+                {business.b2b.description.split('\n').map((line: string, i: number, arr: string[]) => (
+                  <React.Fragment key={i}>
+                    {line}
+                    {i < arr.length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="space-y-3">
+                {business.b2b.advantages.map((advantage: any, idx: number) => (
+                  <div key={idx} className="flex items-start">
+                    <div className="w-1.5 h-1.5 bg-[#bda191] rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <span className="text-gray-700 text-sm">
+                      {advantage.split('\n').map((line: string, i: number, arr: string[]) => (
+                        <React.Fragment key={i}>
+                          {line}
+                          {i < arr.length - 1 && <br />}
+                        </React.Fragment>
+                      ))}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
             
             {/* B2C */}
-            <div className={`transform transition-all duration-1000 delay-400 ${isVisible.business ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-              <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-8 border border-white/50 shadow-xl h-full">
-                <h3 className="text-2xl font-bold mb-4 text-slate-800">{business.b2c.title}</h3>
-                <div className="text-gray-600 mb-6">
-                  {business.b2c.description.split(/<br\s*\/?>|\n/).map((line: string, i: number, arr: string[]) => (
-                    <React.Fragment key={i}>
-                      {line}
-                      {i < arr.length - 1 && <br />}
-                    </React.Fragment>
-                  ))}
+            <div className="bg-gray-50 rounded-lg p-8">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </div>
-                <ul className="space-y-3">
-                  {business.b2c.advantages.map((advantage: any, idx: number) => (
-                    <li key={idx} className="flex items-start text-gray-700">
-                      <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span className="text-sm">{advantage}</span>
-                    </li>
-                  ))}
-        </ul>
+                <h3 className="text-2xl font-bold text-slate-800">{business.b2c.title}</h3>
+              </div>
+              <div className="text-gray-600 mb-6 leading-relaxed">
+                {business.b2c.description.split('\n').map((line: string, i: number, arr: string[]) => (
+                  <React.Fragment key={i}>
+                    {line}
+                    {i < arr.length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="space-y-3">
+                {business.b2c.advantages.map((advantage: any, idx: number) => (
+                  <div key={idx} className="flex items-start">
+                    <div className="w-1.5 h-1.5 bg-slate-700 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <span className="text-gray-700 text-sm">
+                      {advantage.split('\n').map((line: string, i: number, arr: string[]) => (
+                        <React.Fragment key={i}>
+                          {line}
+                          {i < arr.length - 1 && <br />}
+                        </React.Fragment>
+                      ))}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
           
           {/* 수익성 정보 */}
-          <div className={`transform transition-all duration-1000 delay-600 ${isVisible.business ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <div className="bg-gradient-to-r from-slate-700 to-orange-700 rounded-3xl p-8 text-white text-center">
-              <h3 className="text-2xl font-bold mb-6">{business.profitability.title}</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div>
-                  <div className="text-3xl font-bold mb-2">{business.profitability.price}</div>
-                  <div className="text-orange-200">{lang === 'ko' ? '판매가' : 'Price'}</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold mb-2">{business.profitability.cost}</div>
-                  <div className="text-orange-200">{lang === 'ko' ? '제조원가' : 'Cost'}</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold mb-2">{business.profitability.profit}</div>
-                  <div className="text-orange-200">{lang === 'ko' ? '영업이익' : 'Profit'}</div>
-                </div>
-                <div>
-                  <div className="text-4xl font-bold mb-2">{business.profitability.margin}</div>
-                  <div className="text-orange-200">{lang === 'ko' ? '영업이익률' : 'Margin'}</div>
-                </div>
+          <div className="bg-slate-800 rounded-lg p-8 text-white text-center mb-12">
+            <h3 className="text-2xl font-bold mb-8">{business.profitability.title}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div>
+                <div className="text-3xl font-bold mb-2 text-[#bda191]">{business.profitability.price}</div>
+                <div className="text-gray-300 text-sm">{lang === 'ko' ? '판매가' : 'Price'}</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold mb-2">{business.profitability.cost}</div>
+                <div className="text-gray-300 text-sm">{lang === 'ko' ? '제조원가' : 'Cost'}</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold mb-2">{business.profitability.profit}</div>
+                <div className="text-gray-300 text-sm">{lang === 'ko' ? '영업이익' : 'Profit'}</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold mb-2 text-[#bda191]">{business.profitability.margin}</div>
+                <div className="text-gray-300 text-sm">{lang === 'ko' ? '영업이익률' : 'Margin'}</div>
               </div>
             </div>
           </div>
           
           {/* 기업 문의 버튼 */}
-          <div className={`text-center mt-16 transform transition-all duration-1000 delay-800 ${isVisible.business ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+          <div className="text-center">
             <button 
               onClick={() => window.location.href = '/inquiry'}
-              className="inline-flex items-center px-8 py-4 text-lg font-semibold bg-gradient-to-r from-slate-700 to-orange-700 text-white rounded-full hover:from-slate-800 hover:to-orange-800 transform hover:scale-105 transition-all duration-300 shadow-xl"
+              className="inline-flex items-center px-8 py-4 text-lg font-semibold bg-[#bda191] text-white rounded-lg hover:bg-[#a68b7a] transition-colors shadow-lg"
             >
               {lang === 'ko' ? '기업 문의하기' : 'Business Inquiry'}
               <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

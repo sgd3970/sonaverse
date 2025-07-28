@@ -12,6 +12,7 @@ interface BrandStoryFormData {
     ko: { title: string; subtitle: string; body: string; thumbnail_url: string; images: any[] };
     en: { title: string; subtitle: string; body: string; thumbnail_url: string; images: any[] };
   };
+  youtube_url: string;
   tags: string;
   is_published: boolean;
 }
@@ -59,6 +60,7 @@ const EditBrandStoryPage: React.FC = () => {
             images: brandStory.content?.en?.images || []
           }
         },
+        youtube_url: brandStory.youtube_url || '',
         tags: brandStory.tags ? brandStory.tags.join(', ') : '',
         is_published: brandStory.is_published || false
       });
@@ -144,10 +146,26 @@ const EditBrandStoryPage: React.FC = () => {
   };
 
   const parseTagsToArray = (tagsString: string): string[] => {
-    return tagsString
-      .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
+    return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  };
+
+  // YouTube URL을 embed 형식으로 변환하는 함수
+  const convertYouTubeUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // 이미 embed 형식인 경우
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
+    // 일반 YouTube URL을 embed 형식으로 변환
+    const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (videoIdMatch) {
+      const videoId = videoIdMatch[1];
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0`;
+    }
+    
+    return url;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,6 +193,7 @@ const EditBrandStoryPage: React.FC = () => {
             images: formData.content.en.images
           }
         },
+        youtube_url: convertYouTubeUrl(formData.youtube_url),
         tags: parseTagsToArray(formData.tags),
         is_published: formData.is_published
       };
@@ -401,6 +420,28 @@ const EditBrandStoryPage: React.FC = () => {
                   images={formData.content.en.images}
                   onImagesChange={(images) => handleImagesChange('en', images)}
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* 유튜브 URL 필드 */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">유튜브 URL</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  유튜브 URL
+                </label>
+                <input
+                  type="text"
+                  value={formData.youtube_url}
+                  onChange={(e) => handleInputChange('youtube_url', e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  유튜브 영상 URL을 입력하면 썸네일로 변환됩니다.
+                </p>
               </div>
             </div>
           </div>

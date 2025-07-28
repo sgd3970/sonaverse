@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
     
     const { searchParams } = new URL(request.url);
     const lang = searchParams.get('lang') || 'ko';
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = 10;
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const search = searchParams.get('search')?.trim();
     const active = searchParams.get('active');
 
@@ -34,11 +34,13 @@ export async function GET(request: NextRequest) {
       ];
     }
     
+    const skip = (page - 1) * pageSize;
     const total = await PressRelease.countDocuments(query);
     const totalPages = Math.ceil(total / pageSize);
+    
     const pressReleases = await PressRelease.find(query)
       .sort({ created_at: -1 })
-      .skip((page - 1) * pageSize)
+      .skip(skip)
       .limit(pageSize);
     
     // 관리자 페이지용 응답 구조

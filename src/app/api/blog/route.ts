@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '12');
+    const limit = parseInt(searchParams.get('pageSize') || '10');
     const search = searchParams.get('search') || '';
     const tag = searchParams.get('tag') || '';
     const published = searchParams.get('published') || 'true';
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       results: blogPosts,
       total,
       page,
-      limit,
+      pageSize: limit,
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {

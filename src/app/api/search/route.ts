@@ -122,18 +122,47 @@ export async function GET(request: NextRequest) {
       }));
     }
 
-    // 전체 결과 수 계산
-    const totalResults = 
-      searchResults.blog.length + 
-      searchResults.press.length + 
-      searchResults.brandStory.length + 
-      searchResults.products.length;
+    // 전체 결과를 하나의 배열로 합치고 형식 통일
+    const allResults = [
+      ...searchResults.blog.map(item => ({
+        type: 'blog' as const,
+        slug: item.slug,
+        title_ko: item.title?.ko || item.title || '',
+        title_en: item.title?.en || item.title || '',
+        subtitle_ko: item.excerpt?.ko || item.excerpt || '',
+        subtitle_en: item.excerpt?.en || item.excerpt || ''
+      })),
+      ...searchResults.press.map(item => ({
+        type: 'press' as const,
+        slug: item.slug,
+        title_ko: item.title?.ko || item.title || '',
+        title_en: item.title?.en || item.title || '',
+        subtitle_ko: item.excerpt?.ko || item.excerpt || '',
+        subtitle_en: item.excerpt?.en || item.excerpt || ''
+      })),
+      ...searchResults.brandStory.map(item => ({
+        type: 'brand-story' as const,
+        slug: item.slug,
+        title_ko: item.title?.ko || item.title || '',
+        title_en: item.title?.en || item.title || '',
+        subtitle_ko: item.excerpt?.ko || item.excerpt || '',
+        subtitle_en: item.excerpt?.en || item.excerpt || ''
+      })),
+      ...searchResults.products.map(item => ({
+        type: 'product' as const,
+        slug: item.slug,
+        title_ko: item.name?.ko || item.name || '',
+        title_en: item.name?.en || item.name || '',
+        subtitle_ko: item.description?.ko || item.description || '',
+        subtitle_en: item.description?.en || item.description || ''
+      }))
+    ];
 
     return NextResponse.json({
       success: true,
       query,
-      results: searchResults,
-      total: totalResults,
+      results: allResults,
+      total: allResults.length,
       type,
       lang
     });

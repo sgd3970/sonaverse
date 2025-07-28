@@ -425,12 +425,16 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(({
   useEffect(() => {
     setImageMetadata(images || []);
   }, [images]);
-  // imageMetadata가 바뀌었을 때만 상위로 알림 (prop과 다를 때만)
+  
+  // imageMetadata가 바뀌었을 때만 상위로 알림 (무한 루프 방지)
   useEffect(() => {
-    if (JSON.stringify(images) !== JSON.stringify(imageMetadata)) {
+    const currentImagesString = JSON.stringify(imageMetadata);
+    const propImagesString = JSON.stringify(images);
+    
+    if (propImagesString !== currentImagesString) {
       onImagesChange?.(imageMetadata);
     }
-  }, [imageMetadata, images]);
+  }, [imageMetadata, onImagesChange]);
 
   // 이미지 메타데이터 가져오기 함수
   const getImages = useCallback(() => imageMetadata, [imageMetadata]);

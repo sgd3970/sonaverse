@@ -37,15 +37,22 @@ async function logVisitorToDB(request: NextRequest) {
     // 세션 ID 생성 (간단한 구현)
     const sessionId = generateSessionId(request);
 
+    // 오늘 날짜의 시작과 끝
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     const logData = {
       page,
       referrer,
       userAgent,
       ip,
-      sessionId
+      sessionId,
+      today: today.toISOString()
     };
 
-    // DB에 로그 저장
+    // DB에 로그 저장 (세션 기반 중복 체크)
     const response = await fetch(`${request.nextUrl.origin}/api/analytics/log`, {
       method: 'POST',
       headers: {

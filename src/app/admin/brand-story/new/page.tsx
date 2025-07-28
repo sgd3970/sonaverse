@@ -133,10 +133,15 @@ const NewBrandStoryPage: React.FC = () => {
   const convertToEmbedUrl = (url: string): string => {
     if (!url) return '';
     
+    // 이미 embed 형식인 경우
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
     // YouTube URL을 임베드 URL로 변환
     const videoId = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
     if (videoId) {
-      return `https://www.youtube.com/embed/${videoId[1]}`;
+      return `https://www.youtube.com/embed/${videoId[1]}?autoplay=1&mute=1&rel=0`;
     }
     return url;
   };

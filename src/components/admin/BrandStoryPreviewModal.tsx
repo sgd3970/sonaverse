@@ -15,6 +15,25 @@ const BrandStoryPreviewModal: React.FC<BrandStoryPreviewModalProps> = ({
   formData,
   thumbnailPreview
 }) => {
+  // YouTube URL을 embed 형식으로 변환하는 함수
+  const convertYouTubeUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // 이미 embed 형식인 경우
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
+    // 일반 YouTube URL을 embed 형식으로 변환
+    const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (videoIdMatch) {
+      const videoId = videoIdMatch[1];
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0`;
+    }
+    
+    return url;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -71,6 +90,23 @@ const BrandStoryPreviewModal: React.FC<BrandStoryPreviewModalProps> = ({
                     {formData.content.ko.subtitle}
                   </h2>
                 )}
+                
+                {/* YouTube 동영상 */}
+                {formData.youtube_url && (
+                  <div className="mb-6">
+                    <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                      <iframe
+                        className="absolute top-0 left-0 w-full h-full rounded-lg"
+                        src={convertYouTubeUrl(formData.youtube_url)}
+                        title="YouTube video"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  </div>
+                )}
+                
                 <div 
                   className="prose max-w-none"
                   dangerouslySetInnerHTML={{ 
@@ -92,6 +128,23 @@ const BrandStoryPreviewModal: React.FC<BrandStoryPreviewModalProps> = ({
                     {formData.content.en.subtitle}
                   </h2>
                 )}
+                
+                {/* YouTube 동영상 */}
+                {formData.youtube_url && (
+                  <div className="mb-6">
+                    <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                      <iframe
+                        className="absolute top-0 left-0 w-full h-full rounded-lg"
+                        src={convertYouTubeUrl(formData.youtube_url)}
+                        title="YouTube video"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  </div>
+                )}
+                
                 <div 
                   className="prose max-w-none"
                   dangerouslySetInnerHTML={{ 

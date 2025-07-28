@@ -68,9 +68,11 @@ const BrandStorySchema = new Schema<IBrandStory>({
     validate: {
       validator: function(v: string) {
         if (!v) return true; // 빈 값은 허용
-        return /^https:\/\/www\.youtube\.com\/embed\/[a-zA-Z0-9_-]+(\?.*)?$/.test(v);
+        // 일반 YouTube URL과 embed URL 모두 허용
+        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}(.*)?$/;
+        return youtubeRegex.test(v);
       },
-      message: 'Invalid YouTube embed URL format'
+      message: 'Invalid YouTube URL format'
     }
   },
   tags: [{ type: String, trim: true }],

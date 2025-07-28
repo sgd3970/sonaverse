@@ -6,75 +6,41 @@ import '../../app/i18n';
 import Link from 'next/link';
 import { useToast } from '../../components/Toast';
 
-const mockResults = [
-  {
-    type: 'blog',
-    slug: 'our-company-new-vision-2025',
-    title_ko: '새로운 비전 2025, 더 나은 미래를 향하여',
-    title_en: 'New Vision 2025, Towards a Better Future',
-    subtitle_ko: '2025년, 저희 회사는 새로운 비전을 선포하며...',
-    subtitle_en: 'In 2025, our company declares a new vision...',
-  },
-  {
-    type: 'product',
-    slug: 'manbo-walker',
-    title_ko: '만보 보행기',
-    title_en: 'Manbo Walker',
-    subtitle_ko: '어르신들의 안전하고 편안한 보행을 돕는 제품',
-    subtitle_en: 'A product that helps seniors walk safely and comfortably.',
-  },
-  {
-    type: 'press',
-    slug: 'company-awarded-innovation-prize',
-    title_ko: '당사, 2025 혁신 기술상 수상',
-    title_en: 'Our Company Wins 2025 Innovation Technology Award',
-    subtitle_ko: '저희 회사가 2025 혁신 기술상을 수상했습니다...',
-    subtitle_en: 'Our company has won the 2025 Innovation Technology Award...',
-  },
-  {
-    type: 'brand_story',
-    slug: 'our-journey-from-startup-to-leader',
-    title_ko: '스타트업에서 리더로: 우리의 여정',
-    title_en: 'From Startup to Leader: Our Journey',
-    subtitle_ko: '작은 아이디어에서 시작하여 산업을 선도하기까지의 여정.',
-    subtitle_en: 'From a small idea to leading the industry.',
-  },
-];
+interface SearchResult {
+  type: 'blog' | 'press' | 'brand-story' | 'product';
+  slug: string;
+  title_ko: string;
+  title_en: string;
+  subtitle_ko: string;
+  subtitle_en: string;
+}
 
 const SearchPage: React.FC = () => {
   const { t, i18n } = useTranslation('common');
   const { addToast } = useToast();
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!query.trim()) {
-      setResults([]);
-      setSearched(false);
-      return;
-    }
+    if (!searchTerm.trim()) return;
 
     setLoading(true);
-    setSearched(true);
+    setHasSearched(true);
 
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}&lang=${i18n.language}`);
-      
-      if (!response.ok) {
-        throw new Error('검색에 실패했습니다.');
-      }
-
+      const response = await fetch(`/api/search?q=${encodeURIComponent(searchTerm.trim())}`);
       const data = await response.json();
-      setResults(data.results || []);
       
-      if (data.results.length === 0) {
+      if (data.success) {
+        setResults(data.results || []);
+      } else {
+        setResults([]);
         addToast({
-          type: 'info',
-          message: i18n.language === 'en' ? 'No search results found.' : '검색 결과가 없습니다.'
+          type: 'error',
+          message: '검색 중 오류가 발생했습니다.'
         });
       }
     } catch (error) {
@@ -82,63 +48,134 @@ const SearchPage: React.FC = () => {
       setResults([]);
       addToast({
         type: 'error',
-        message: i18n.language === 'en' ? 'Search failed. Please try again.' : '검색에 실패했습니다. 다시 시도해주세요.'
+        message: '검색 중 오류가 발생했습니다.'
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'blog': return '블로그';
+      case 'press': return '언론보도';
+      case 'brand-story': return '브랜드 스토리';
+      case 'product': return '제품';
+      default: return type;
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'blog': return 'bg-blue-100 text-blue-800';
+      case 'press': return 'bg-green-100 text-green-800';
+      case 'brand-story': return 'bg-purple-100 text-purple-800';
+      case 'product': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getDetailUrl = (result: SearchResult) => {
+    switch (result.type) {
+      case 'blog': return `/blog/${result.slug}`;
+      case 'press': return `/press/${result.slug}`;
+      case 'brand-story': return `/brand-story/${result.slug}`;
+      case 'product': return `/products/${result.slug}`;
+      default: return '#';
+    }
+  };
+
   return (
-    <div className="w-full min-h-[60vh] flex flex-col items-center px-4 py-12 bg-white">
-      <div className="max-w-2xl w-full">
-        <h1 className="text-3xl md:text-4xl font-bold mb-8">{t('search', '검색')}</h1>
-        <form onSubmit={handleSearch} className="flex gap-2 mb-8">
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder={t('search_placeholder', '검색어를 입력하세요')}
-            className="flex-1 border rounded px-3 py-2"
-          />
-          <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
             {t('search', '검색')}
-          </button>
-        </form>
-        <div>
-          {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">검색 중...</p>
-            </div>
-          )}
-          
-          {!loading && searched && results.length === 0 && (
-            <div className="text-gray-400 text-center py-8">
-              {i18n.language === 'en' ? 'No search results found.' : '검색 결과가 없습니다.'}
-            </div>
-          )}
-          
-          {!loading && results.length > 0 && (
-            <ul className="space-y-4">
-              {results.map(item => (
-                <li key={item.type + item.slug} className="bg-gray-50 rounded-lg shadow p-4">
-                  <div className="text-xs text-gray-500 mb-1">
-                    {item.type === 'blog' ? (i18n.language === 'en' ? 'Blog' : '블로그') :
-                     item.type === 'product' ? (i18n.language === 'en' ? 'Product' : '제품') :
-                     item.type === 'press' ? (i18n.language === 'en' ? 'Press' : '언론보도') :
-                     item.type === 'brand_story' ? (i18n.language === 'en' ? 'Brand Story' : '브랜드 스토리') :
-                     item.type}
-                  </div>
-                  <Link href={`/${item.type === 'brand_story' ? 'brand-story' : item.type}/${item.slug}`} className="text-lg font-semibold hover:underline">
-                    {i18n.language === 'en' ? item.title_en : item.title_ko}
-                  </Link>
-                  <div className="text-gray-600 mt-1">{i18n.language === 'en' ? item.subtitle_en : item.subtitle_ko}</div>
-                </li>
-              ))}
-            </ul>
-          )}
+          </h1>
+          <p className="text-gray-600">
+            {t('search_description', '원하는 정보를 검색해보세요')}
+          </p>
         </div>
+
+        {/* 검색 폼 */}
+        <form onSubmit={handleSearch} className="mb-8">
+          <div className="flex gap-4">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t('search_placeholder', '검색어를 입력하세요...')}
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+            <button
+              type="submit"
+              disabled={loading || !searchTerm.trim()}
+              className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {t('searching', '검색 중...')}
+                </div>
+              ) : (
+                t('search', '검색')
+              )}
+            </button>
+          </div>
+        </form>
+
+        {/* 검색 결과 */}
+        {hasSearched && (
+          <div className="space-y-4">
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">{t('searching', '검색 중...')}</p>
+              </div>
+            ) : results.length > 0 ? (
+              <>
+                <div className="text-sm text-gray-600 mb-4">
+                  {t('search_results_count', '{{count}}개의 결과를 찾았습니다', { count: results.length })}
+                </div>
+                <div className="space-y-4">
+                  {results.map((result, index) => (
+                    <Link
+                      key={index}
+                      href={getDetailUrl(result)}
+                      className="block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`px-2 py-1 text-xs rounded-full ${getTypeColor(result.type)}`}>
+                              {getTypeLabel(result.type)}
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {i18n.language === 'en' ? result.title_en : result.title_ko}
+                          </h3>
+                          <p className="text-gray-600">
+                            {i18n.language === 'en' ? result.subtitle_en : result.subtitle_ko}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {t('no_results', '검색 결과가 없습니다')}
+                </h3>
+                <p className="text-gray-600">
+                  {t('no_results_description', '다른 검색어를 시도해보세요')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

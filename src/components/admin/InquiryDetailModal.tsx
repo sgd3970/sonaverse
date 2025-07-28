@@ -2,10 +2,26 @@
 
 import React from 'react';
 
+interface Inquiry {
+  _id: string;
+  inquiry_type: string;
+  name: string;
+  company_name: string;
+  phone_number: string;
+  email: string;
+  message: string;
+  attached_files: string[];
+  submitted_at: string;
+  status: string;
+  admin_notes?: string;
+  responded_at?: string;
+  responded_by?: string;
+}
+
 interface InquiryDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  inquiry: any;
+  inquiry: Inquiry | null;
 }
 
 const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
@@ -17,7 +33,7 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'new':
+      case 'pending':
         return 'bg-red-100 text-red-800';
       case 'inProgress':
         return 'bg-yellow-100 text-yellow-800';
@@ -32,12 +48,23 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
 
   const getStatusText = (status: string) => {
     const statusMap = {
-      new: '신규',
+      pending: '대기중',
       inProgress: '처리중',
       completed: '완료',
       closed: '종료'
     };
     return statusMap[status as keyof typeof statusMap] || status;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -88,7 +115,7 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                     회사명
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
-                    <p className="text-gray-900">{inquiry.company}</p>
+                    <p className="text-gray-900">{inquiry.company_name}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -104,7 +131,7 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                     전화번호
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
-                    <p className="text-gray-900 font-mono">{inquiry.phone}</p>
+                    <p className="text-gray-900 font-mono">{inquiry.phone_number}</p>
                   </div>
                 </div>
               </div>
@@ -121,10 +148,10 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    카테고리
+                    문의 유형
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
-                    <p className="text-gray-900">{inquiry.category}</p>
+                    <p className="text-gray-900">{inquiry.inquiry_type}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -142,19 +169,62 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                     접수일
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
-                    <p className="text-gray-900 font-mono">{inquiry.received_date}</p>
+                    <p className="text-gray-900 font-mono">{formatDate(inquiry.submitted_at)}</p>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    제목
-                  </label>
-                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
-                    <p className="text-gray-900 font-medium">{inquiry.subject}</p>
+                {inquiry.responded_at && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      답변일
+                    </label>
+                    <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
+                      <p className="text-gray-900 font-mono">{formatDate(inquiry.responded_at)}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 첨부파일 섹션 */}
+            {inquiry.attached_files && inquiry.attached_files.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  첨부파일
+                </h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
+                  <div className="space-y-2">
+                    {inquiry.attached_files.map((file, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <a href={file} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+                          첨부파일 {index + 1}
+                        </a>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* 관리자 메모 섹션 */}
+            {inquiry.admin_notes && (
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  관리자 메모
+                </h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
+                  <p className="text-gray-900 whitespace-pre-wrap">{inquiry.admin_notes}</p>
+                </div>
+              </div>
+            )}
 
             {/* 문의 내용 섹션 */}
             <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">

@@ -168,20 +168,6 @@ const BlogPreviewModal: React.FC<BlogPreviewModalProps> = ({
                   
                   {/* 카드 콘텐츠 */}
                   <div className="p-4">
-                    {/* 태그 */}
-                    {tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    
                     {/* 제목 */}
                     <h3 className="text-lg font-semibold text-gray-900 mb-2" style={{
                       display: '-webkit-box',
