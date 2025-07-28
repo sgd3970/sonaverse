@@ -4,6 +4,111 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../../src/app/i18n';
 
+// 타입 정의
+interface BlogPost {
+  _id: string;
+  slug: string;
+  title: string;
+  content: {
+    ko: {
+      title: string;
+      subtitle: string;
+      body: string;
+      thumbnail_url?: string;
+    };
+    en: {
+      title: string;
+      subtitle: string;
+      body: string;
+      thumbnail_url?: string;
+    };
+  };
+  summary?: string;
+  excerpt?: string;
+  thumbnail?: string;
+  published_date?: string;
+  created_at: string;
+  is_published: boolean;
+}
+
+interface PressRelease {
+  _id: string;
+  slug: string;
+  press_name: {
+    ko: string;
+    en: string;
+  };
+  content: {
+    ko: {
+      title: string;
+      body: string;
+      external_link?: string;
+    };
+    en: {
+      title: string;
+      body: string;
+      external_link?: string;
+    };
+  };
+  published_date?: string;
+  created_at: string;
+  is_published: boolean;
+}
+
+interface BrandStory {
+  _id: string;
+  slug: string;
+  content: {
+    ko: {
+      title: string;
+      subtitle: string;
+      body: string;
+      thumbnail_url?: string;
+    };
+    en: {
+      title: string;
+      subtitle: string;
+      body: string;
+      thumbnail_url?: string;
+    };
+  };
+  published_date?: string;
+  created_at: string;
+  is_published: boolean;
+}
+
+interface Product {
+  _id: string;
+  slug: string;
+  name: {
+    ko: string;
+    en: string;
+  };
+  description: {
+    ko: string;
+    en: string;
+  };
+  image?: string;
+  created_at: string;
+  is_active: boolean;
+}
+
+interface TeamMember {
+  name: string;
+  position: string;
+  background: string[];
+  experience: string[];
+  achievements: string[];
+  image?: string;
+}
+
+interface CompanyHistory {
+  year: string;
+  title: string;
+  description: string;
+  category: 'past' | 'present' | 'future';
+}
+
 const heroContent = {
   ko: {
     headline: '시니어 라이프를 혁신하는',
@@ -496,9 +601,9 @@ const HomePage: React.FC = () => {
   const lang = i18n.language === 'en' ? 'en' : 'ko';
   const [currentSection, setCurrentSection] = useState(0);
   const [isVisible, setIsVisible] = useState<any>({});
-  const [pressData, setPressData] = useState([]);
-  const [blogData, setBlogData] = useState([]);
-  const [brandStoryData, setBrandStoryData] = useState<any[]>([]);
+  const [pressData, setPressData] = useState<PressRelease[]>([]);
+  const [blogData, setBlogData] = useState<BlogPost[]>([]);
+  const [brandStoryData, setBrandStoryData] = useState<BrandStory[]>([]);
   
   // 더보기 기능을 위한 상태
   const [showFullTeam, setShowFullTeam] = useState(false);
@@ -574,7 +679,7 @@ const HomePage: React.FC = () => {
   const business: any = businessStrategy[lang];
 
   // Auto-sliding Carousel component
-  const ContentCarousel = ({ items, type }: { items: any[]; type: string }) => {
+  const ContentCarousel = ({ items, type }: { items: (BlogPost | PressRelease | BrandStory | Product)[]; type: string }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
     
@@ -1423,7 +1528,7 @@ const HomePage: React.FC = () => {
                       const mainPost = blogData[0];
                       const itemContent = mainPost.content?.[lang] || mainPost.content?.ko || mainPost.content?.en || mainPost;
                       const title = itemContent.title || mainPost.title || 'No Title';
-                      const description = itemContent.subtitle || mainPost.summary || mainPost.excerpt || itemContent.description || 'No description available';
+                      const description = itemContent.subtitle || mainPost.summary || mainPost.excerpt || 'No description available';
                       const thumbnailUrl = itemContent.thumbnail_url || mainPost.thumbnail || '/logo/nonImage_logo.png';
                       const date = new Date(mainPost.published_date || mainPost.created_at || Date.now()).toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US');
                       
@@ -1476,10 +1581,10 @@ const HomePage: React.FC = () => {
                 
                 {/* 사이드 포스트들 */}
                 <div className="space-y-6">
-                  {blogData.slice(1, 4).map((post: any, idx: number) => {
+                  {blogData.slice(1, 4).map((post: BlogPost, idx: number) => {
                     const itemContent = post.content?.[lang] || post.content?.ko || post.content?.en || post;
                     const title = itemContent.title || post.title || 'No Title';
-                    const description = itemContent.subtitle || post.summary || post.excerpt || itemContent.description || 'No description available';
+                    const description = itemContent.subtitle || post.summary || post.excerpt || 'No description available';
                     const thumbnailUrl = itemContent.thumbnail_url || post.thumbnail || '/logo/nonImage_logo.png';
                     const date = new Date(post.published_date || post.created_at || Date.now()).toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US');
                     

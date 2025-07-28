@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '../../../lib/db';
-import BlogPost from '../../../models/BlogPost';
-import PressRelease from '../../../models/PressRelease';
-import BrandStory from '../../../models/BrandStory';
-import Product from '../../../models/Product';
-import SearchKeyword from '../../../models/SearchKeyword';
+import { dbConnect } from '@/lib/db';
+import BlogPost from '@/models/BlogPost';
+import PressRelease from '@/models/PressRelease';
+import BrandStory from '@/models/BrandStory';
+import Product from '@/models/Product';
+import SearchKeyword from '@/models/SearchKeyword';
+
+// 검색 결과 타입 정의
+interface SearchResult {
+  type: 'blog' | 'press' | 'brand-story' | 'product';
+  slug: string;
+  title_ko: string;
+  title_en: string;
+  subtitle_ko: string;
+  subtitle_en: string;
+}
+
+interface SearchResults {
+  blog: any[];
+  press: any[];
+  brandStory: any[];
+  products: any[];
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +44,7 @@ export async function GET(request: NextRequest) {
       console.error('Error logging search keyword:', error);
     });
 
-    const searchResults: any = {
+    const searchResults: SearchResults = {
       blog: [],
       press: [],
       brandStory: [],
@@ -123,8 +140,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 전체 결과를 하나의 배열로 합치고 형식 통일
-    const allResults = [
-      ...searchResults.blog.map(item => ({
+    const allResults: SearchResult[] = [
+      ...searchResults.blog.map((item: any) => ({
         type: 'blog' as const,
         slug: item.slug,
         title_ko: item.title?.ko || item.title || '',
@@ -132,7 +149,7 @@ export async function GET(request: NextRequest) {
         subtitle_ko: item.excerpt?.ko || item.excerpt || '',
         subtitle_en: item.excerpt?.en || item.excerpt || ''
       })),
-      ...searchResults.press.map(item => ({
+      ...searchResults.press.map((item: any) => ({
         type: 'press' as const,
         slug: item.slug,
         title_ko: item.title?.ko || item.title || '',
@@ -140,7 +157,7 @@ export async function GET(request: NextRequest) {
         subtitle_ko: item.excerpt?.ko || item.excerpt || '',
         subtitle_en: item.excerpt?.en || item.excerpt || ''
       })),
-      ...searchResults.brandStory.map(item => ({
+      ...searchResults.brandStory.map((item: any) => ({
         type: 'brand-story' as const,
         slug: item.slug,
         title_ko: item.title?.ko || item.title || '',
@@ -148,7 +165,7 @@ export async function GET(request: NextRequest) {
         subtitle_ko: item.excerpt?.ko || item.excerpt || '',
         subtitle_en: item.excerpt?.en || item.excerpt || ''
       })),
-      ...searchResults.products.map(item => ({
+      ...searchResults.products.map((item: any) => ({
         type: 'product' as const,
         slug: item.slug,
         title_ko: item.name?.ko || item.name || '',

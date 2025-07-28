@@ -24,6 +24,7 @@ interface PressFormData {
       external_link?: string;
     };
   };
+  published_date: string;
   is_active: boolean;
 }
 
@@ -70,6 +71,7 @@ const EditPressPage: React.FC = () => {
             external_link: data.content?.en?.external_link || ''
           }
         },
+        published_date: data.published_date || new Date().toISOString().split('T')[0],
         is_active: data.is_active || false
       });
     } catch (error) {
@@ -126,6 +128,7 @@ const EditPressPage: React.FC = () => {
         slug: formData.slug,
         press_name: formData.press_name,
         content: formData.content,
+        published_date: formData.published_date,
         is_active: formData.is_active
       };
 
