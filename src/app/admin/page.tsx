@@ -33,19 +33,15 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false); // 임시로 false로 설정
 
   useEffect(() => {
-    console.log('[대시보드] useEffect 실행됨');
     fetchStats();
   }, []);
 
   const fetchStats = async () => {
     try {
-      console.log('[대시보드] fetchStats 시작');
       setLoading(true);
       const res = await fetch('/api/admin/stats', {
         credentials: 'include',
       });
-      
-      console.log('[대시보드] API 응답 상태:', res.status);
       
       if (!res.ok) {
         const errorText = await res.text();
@@ -54,7 +50,6 @@ const AdminDashboard: React.FC = () => {
       }
       
       const data = await res.json();
-      console.log('[대시보드] Stats data:', data);
       setStats(data);
     } catch (error) {
       console.error('[대시보드] Error fetching stats:', error);
@@ -63,7 +58,6 @@ const AdminDashboard: React.FC = () => {
         message: '통계 데이터를 불러오는데 실패했습니다.'
       });
     } finally {
-      console.log('[대시보드] fetchStats 완료, loading false로 설정');
       setLoading(false);
     }
   };

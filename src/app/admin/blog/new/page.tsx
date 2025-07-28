@@ -119,7 +119,6 @@ const NewBlogPage: React.FC = () => {
     }
 
     setLoading(true);
-    console.log('[블로그 생성] 제출 formData:', formData);
     
     try {
       let thumbnailUrl = '';
@@ -128,7 +127,6 @@ const NewBlogPage: React.FC = () => {
       if (thumbnailFile) {
         try {
           thumbnailUrl = await uploadThumbnail(thumbnailFile, formData.slug);
-          console.log('[썸네일 업로드 성공] URL:', thumbnailUrl);
         } catch (error) {
           console.error('[썸네일 업로드 실패]', error);
           addToast({
@@ -147,7 +145,6 @@ const NewBlogPage: React.FC = () => {
       if (koEditorRef.current) {
         try {
           updatedKoBody = await koEditorRef.current.uploadTempImagesToBlob(formData.slug);
-          console.log('[한국어 본문 이미지 업로드 후 HTML]', updatedKoBody);
         } catch (error) {
           console.error('[한국어 에디터 이미지 업로드 실패]:', error);
         }
@@ -156,7 +153,6 @@ const NewBlogPage: React.FC = () => {
       if (enEditorRef.current) {
         try {
           updatedEnBody = await enEditorRef.current.uploadTempImagesToBlob(formData.slug);
-          console.log('[영어 본문 이미지 업로드 후 HTML]', updatedEnBody);
         } catch (error) {
           console.error('[영어 에디터 이미지 업로드 실패]:', error);
         }
@@ -177,7 +173,6 @@ const NewBlogPage: React.FC = () => {
           }
         }
       };
-      console.log('[최종 DB 전송 payload]', payload);
 
       // 실제 API 요청
       const response = await fetch('/api/blog', {
@@ -189,7 +184,6 @@ const NewBlogPage: React.FC = () => {
         body: JSON.stringify(payload),
       });
       const result = await response.json();
-      console.log('[블로그 생성 API 응답]', result);
 
       if (!response.ok) {
         addToast({
@@ -396,7 +390,6 @@ const NewBlogPage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                console.log('Preview button clicked, formData:', formData);
                 setShowPreview(true);
               }}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"

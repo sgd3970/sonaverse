@@ -523,7 +523,6 @@ const HomePage: React.FC = () => {
     fetch('/api/press?limit=6&published=true')
       .then(res => res.json())
       .then(data => {
-        console.log('Press data:', data);
         setPressData(data.results || []);
       })
       .catch(err => console.error('Error fetching press:', err));
@@ -532,7 +531,6 @@ const HomePage: React.FC = () => {
     fetch('/api/blog?limit=6&published=true')
       .then(res => res.json())
       .then(data => {
-        console.log('Blog data:', data);
         setBlogData(data.results || []);
       })
       .catch(err => console.error('Error fetching blog:', err));
@@ -541,7 +539,6 @@ const HomePage: React.FC = () => {
     fetch('/api/pages?limit=6')
       .then(res => res.json())
       .then(data => {
-        console.log('Pages data:', data);
         // Filter pages by category or type if available
         let brandStories: any[] = Array.isArray(data.results || data) ? (data.results || data).filter((page: any) => 
           page.category === 'brand-story' || 
@@ -628,10 +625,44 @@ const HomePage: React.FC = () => {
             },
             created_at: '2024-01-15',
             published_date: '2024-01-15'
+          },
+          {
+            slug: 'innovation-at-the-core-of-our-brand',
+            content: {
+              ko: {
+                title: '브랜드의 핵심, 혁신',
+                subtitle: '브랜드의 핵심 가치와 혁신 사례를 소개합니다',
+                thumbnail_url: '/logo/symbol_logo.png'
+              },
+              en: {
+                title: 'Innovation at the Core of Our Brand',
+                subtitle: 'Introducing the core values and innovation cases',
+                thumbnail_url: '/logo/symbol_logo.png'
+              }
+            },
+            created_at: '2024-02-20',
+            published_date: '2024-02-20'
+          },
+          {
+            slug: 'building-trust-with-seniors',
+            content: {
+              ko: {
+                title: '시니어와 함께 만들어가는 신뢰',
+                subtitle: '고객의 목소리에 귀 기울이며 만들어가는 브랜드 스토리',
+                thumbnail_url: '/logo/symbol_logo.png'
+              },
+              en: {
+                title: 'Building Trust with Seniors',
+                subtitle: 'Brand story built by listening to customer voices',
+                thumbnail_url: '/logo/symbol_logo.png'
+              }
+            },
+            created_at: '2024-03-10',
+            published_date: '2024-03-10'
           }
-        ] as any[]);
+        ]);
       });
-  }, [lang]);
+  }, []);
 
   const content: any = heroContent[lang];
   const problems: any = problemsToSolve[lang];

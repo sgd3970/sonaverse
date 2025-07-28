@@ -7,8 +7,6 @@ import { removeAuthCookie } from '../../../../lib/auth-server';
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('[로그아웃 API] 로그아웃 요청 처리 시작');
-    
     // 응답 생성
     const response = NextResponse.json({ 
       success: true, 
@@ -17,8 +15,6 @@ export async function POST(request: NextRequest) {
     
     // 쿠키 삭제
     const responseWithCookieRemoved = removeAuthCookie(response);
-    
-    console.log('[로그아웃 API] 쿠키 삭제 완료');
     
     return responseWithCookieRemoved;
   } catch (error) {
@@ -35,15 +31,11 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[로그아웃 API] GET 요청으로 로그아웃 처리');
-    
     // 응답 생성 (리다이렉트)
     const response = NextResponse.redirect(new URL('/admin/login', request.url));
     
     // 쿠키 삭제
     const responseWithCookieRemoved = removeAuthCookie(response);
-    
-    console.log('[로그아웃 API] GET 요청 쿠키 삭제 완료');
     
     return responseWithCookieRemoved;
   } catch (error) {

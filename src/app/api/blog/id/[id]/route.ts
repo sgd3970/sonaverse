@@ -1,46 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '../../../../lib/db';
-import BlogPost from '../../../../models/BlogPost';
-import { getCurrentUser } from '../../../../lib/auth-server';
+import { dbConnect } from '../../../../../lib/db';
+import BlogPost from '../../../../../models/BlogPost';
+import { getCurrentUser } from '../../../../../lib/auth-server';
 
 /**
- * 블로그 포스트 상세 조회 (GET)
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  try {
-    await dbConnect();
-    const resolvedParams = await params;
-    const { slug } = resolvedParams;
-
-    const blogPost = await BlogPost.findOne({ slug })
-      .lean();
-
-    if (!blogPost) {
-      return NextResponse.json(
-        { error: '블로그 포스트를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(blogPost);
-  } catch (error) {
-    console.error('Error fetching blog post:', error);
-    return NextResponse.json(
-      { error: '블로그 포스트를 불러오는데 실패했습니다.' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * 블로그 포스트 수정 (PATCH)
+ * 블로그 포스트 수정 (PATCH) - ID로 조회
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // 인증 체크
@@ -51,11 +19,11 @@ export async function PATCH(
 
     await dbConnect();
     const resolvedParams = await params;
-    const { slug } = resolvedParams;
+    const { id } = resolvedParams;
     const body = await request.json();
 
-    const blogPost = await BlogPost.findOneAndUpdate(
-      { slug },
+    const blogPost = await BlogPost.findByIdAndUpdate(
+      id,
       {
         ...body,
         last_updated: new Date()
@@ -81,11 +49,11 @@ export async function PATCH(
 }
 
 /**
- * 블로그 포스트 삭제 (DELETE)
+ * 블로그 포스트 삭제 (DELETE) - ID로 조회
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // 인증 체크
@@ -96,9 +64,9 @@ export async function DELETE(
 
     await dbConnect();
     const resolvedParams = await params;
-    const { slug } = resolvedParams;
+    const { id } = resolvedParams;
 
-    const blogPost = await BlogPost.findOneAndDelete({ slug });
+    const blogPost = await BlogPost.findByIdAndDelete(id);
 
     if (!blogPost) {
       return NextResponse.json(
@@ -115,4 +83,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-} 
+}

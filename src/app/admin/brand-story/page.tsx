@@ -39,7 +39,6 @@ const AdminBrandStoryPage: React.FC = () => {
       const res = await fetch('/api/brand-story?published=false');
       if (!res.ok) throw new Error('Failed to fetch brand stories');
       const data = await res.json();
-      console.log('Brand stories response:', data);
       setBrandStories(data.results || []);
     } catch (err) {
       console.error('Error fetching brand stories:', err);

@@ -16,15 +16,9 @@ interface EmailData {
 export async function sendEmail(emailData: EmailData): Promise<boolean> {
   try {
     // 실제 구현 시에는 여기에 이메일 서비스 연동
-    console.log('📧 이메일 전송:', {
-      to: emailData.to,
-      subject: emailData.subject,
-      timestamp: new Date().toISOString()
-    });
     
     // 개발 환경에서는 실제 전송하지 않고 로그만 출력
     if (process.env.NODE_ENV === 'development') {
-      console.log('개발 환경 - 이메일 내용:', emailData.html);
       return true;
     }
     

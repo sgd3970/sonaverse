@@ -41,8 +41,6 @@ export function logoutClient(): void {
     
     // 세션 스토리지 정리 (localStorage는 더 이상 사용하지 않음)
     sessionStorage.removeItem('admin_authenticated');
-    
-    console.log('[클라이언트 로그아웃] 쿠키 및 스토리지 정리 완료');
   } catch (error) {
     console.error('Client logout failed:', error);
   }

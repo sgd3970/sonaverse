@@ -125,13 +125,12 @@ const EditPressPage: React.FC = () => {
 
     try {
       const payload = {
+        slug: formData.slug,
         published_date: formData.published_date,
         press_name: formData.press_name,
         content: formData.content,
         is_active: formData.is_active
       };
-
-      console.log('[최종 DB 전송 payload]', payload);
 
       const response = await fetch(`/api/press/${formData.slug}`, {
         method: 'PATCH',
@@ -143,7 +142,6 @@ const EditPressPage: React.FC = () => {
       });
       
       const result = await response.json();
-      console.log('[언론보도 수정 API 응답]', result);
 
       if (!response.ok) {
         addToast({

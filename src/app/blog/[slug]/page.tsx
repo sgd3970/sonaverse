@@ -105,7 +105,6 @@ const BlogDetailPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await fetch(`/api/blog/${slug}`);
-      console.log('[상세페이지] API 응답 status:', res.status);
       
       if (!res.ok) {
         if (res.status === 404) {
@@ -115,7 +114,6 @@ const BlogDetailPage: React.FC = () => {
       }
       
       const data = await res.json();
-      console.log('[상세페이지] API 데이터:', data);
       setBlogPost(data);
     } catch (err) {
       console.error('[상세페이지] fetchBlogPost 에러:', err);
@@ -169,8 +167,6 @@ const BlogDetailPage: React.FC = () => {
   }
 
   if (blogPost) {
-    console.log('[상세페이지] 렌더링 blogPost:', blogPost);
-    console.log('[상세페이지] 렌더링 content:', content);
   }
 
   return (

@@ -6,14 +6,12 @@ interface InquiryDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   inquiry: any;
-  lang: 'ko' | 'en';
 }
 
 const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
   isOpen,
   onClose,
-  inquiry,
-  lang
+  inquiry
 }) => {
   if (!isOpen || !inquiry) return null;
 
@@ -34,20 +32,12 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
 
   const getStatusText = (status: string) => {
     const statusMap = {
-      ko: {
-        new: '신규',
-        inProgress: '처리중',
-        completed: '완료',
-        closed: '종료'
-      },
-      en: {
-        new: 'New',
-        inProgress: 'In Progress',
-        completed: 'Completed',
-        closed: 'Closed'
-      }
+      new: '신규',
+      inProgress: '처리중',
+      completed: '완료',
+      closed: '종료'
     };
-    return statusMap[lang][status as keyof typeof statusMap.ko] || status;
+    return statusMap[status as keyof typeof statusMap] || status;
   };
 
   return (
@@ -57,10 +47,10 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold text-white">
-              {lang === 'ko' ? '문의 상세 정보' : 'Inquiry Details'}
+              문의 상세 정보
             </h2>
             <p className="text-gray-300 text-sm mt-1">
-              {lang === 'ko' ? '문의 상세 정보를 확인하세요' : 'View inquiry details'}
+              문의 상세 정보를 확인하세요
             </p>
           </div>
           <button
@@ -82,12 +72,12 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                 <svg className="w-5 h-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                {lang === 'ko' ? '기본 정보' : 'Basic Information'}
+                기본 정보
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {lang === 'ko' ? '이름' : 'Name'}
+                    이름
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
                     <p className="text-gray-900 font-medium">{inquiry.name}</p>
@@ -95,7 +85,7 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {lang === 'ko' ? '회사명' : 'Company'}
+                    회사명
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
                     <p className="text-gray-900">{inquiry.company}</p>
@@ -103,7 +93,7 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {lang === 'ko' ? '이메일' : 'Email'}
+                    이메일
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
                     <p className="text-gray-900 font-mono text-sm">{inquiry.email}</p>
@@ -111,7 +101,7 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {lang === 'ko' ? '전화번호' : 'Phone'}
+                    전화번호
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
                     <p className="text-gray-900 font-mono">{inquiry.phone}</p>
@@ -126,20 +116,20 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                 <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                {lang === 'ko' ? '문의 정보' : 'Inquiry Information'}
+                문의 정보
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {lang === 'ko' ? '카테고리' : 'Category'}
+                    카테고리
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
-                    <p className="text-gray-900">{inquiry.category[lang]}</p>
+                    <p className="text-gray-900">{inquiry.category}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {lang === 'ko' ? '상태' : 'Status'}
+                    상태
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
                     <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(inquiry.status)}`}>
@@ -149,7 +139,7 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {lang === 'ko' ? '접수일' : 'Received Date'}
+                    접수일
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
                     <p className="text-gray-900 font-mono">{inquiry.received_date}</p>
@@ -157,10 +147,10 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {lang === 'ko' ? '제목' : 'Subject'}
+                    제목
                   </label>
                   <div className="bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm">
-                    <p className="text-gray-900 font-medium">{inquiry.subject[lang]}</p>
+                    <p className="text-gray-900 font-medium">{inquiry.subject}</p>
                   </div>
                 </div>
               </div>
@@ -172,12 +162,12 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
                 <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                {lang === 'ko' ? '문의 내용' : 'Message'}
+                문의 내용
               </h3>
               <div className="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
                 <div className="prose max-w-none">
                   <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">
-                    {inquiry.message?.[lang] || (lang === 'ko' ? '문의 내용이 없습니다.' : 'No message content available.')}
+                    {inquiry.message || '문의 내용이 없습니다.'}
                   </p>
                 </div>
               </div>
@@ -191,7 +181,7 @@ const InquiryDetailModal: React.FC<InquiryDetailModalProps> = ({
             onClick={onClose}
             className="px-8 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            {lang === 'ko' ? '닫기' : 'Close'}
+            닫기
           </button>
         </div>
       </div>

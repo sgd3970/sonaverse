@@ -56,8 +56,6 @@ const AdminLoginContent: React.FC = () => {
     }
 
     try {
-      console.log('[로그인] 로그인 시도:', formData.email);
-      
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -68,7 +66,6 @@ const AdminLoginContent: React.FC = () => {
       });
 
       const data = await res.json();
-      console.log('[로그인] 응답 상태:', res.status, data);
 
       if (!res.ok) {
         throw new Error(data.error || '로그인에 실패했습니다.');
@@ -83,25 +80,19 @@ const AdminLoginContent: React.FC = () => {
 
       // 로그인 성공 시 returnUrl로 리다이렉트 또는 대시보드로 이동
       const returnUrl = searchParams.get('returnUrl');
-      console.log('[로그인] 원본 returnUrl:', returnUrl);
       
       const decodedReturnUrl = returnUrl ? decodeURIComponent(returnUrl) : null;
-      console.log('[로그인] 디코딩된 returnUrl:', decodedReturnUrl);
       
       // 유효한 returnUrl인지 확인 (admin 경로만 허용)
       const isValidReturnUrl = decodedReturnUrl && decodedReturnUrl.startsWith('/admin');
-      console.log('[로그인] 유효한 returnUrl 여부:', isValidReturnUrl);
       
       const finalUrl = isValidReturnUrl ? decodedReturnUrl : '/admin';
-      console.log('[로그인] 최종 리다이렉트 URL:', finalUrl);
       
       // 세션 스토리지에 인증 상태 저장
       sessionStorage.setItem('admin_authenticated', 'true');
-      console.log('[로그인] 세션 스토리지에 인증 상태 저장');
       
       // 쿠키 설정 완료를 위한 약간의 지연 후 리다이렉트
       setTimeout(() => {
-        console.log('[로그인] 리다이렉트 실행:', finalUrl);
         window.location.href = finalUrl; // router.replace 대신 전체 페이지 리로드
       }, 1000); // 토스터가 보이도록 1초로 증가
     } catch (error) {

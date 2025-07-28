@@ -30,8 +30,6 @@ const AuthManager: React.FC<AuthManagerProps> = ({ children }) => {
           
           // 백업으로 클라이언트 로그아웃도 실행
           logoutClient();
-          
-          console.log('[AuthManager] 브라우저 종료 시 로그아웃 처리 완료');
         } catch (error) {
           console.error('Beforeunload logout error:', error);
         }
@@ -68,7 +66,6 @@ const AuthManager: React.FC<AuthManagerProps> = ({ children }) => {
               }
               
               logoutClient();
-              console.log('[AuthManager] 페이지 숨김으로 인한 로그아웃 처리');
             } catch (error) {
               console.error('Visibility change logout error:', error);
             }
@@ -80,7 +77,6 @@ const AuthManager: React.FC<AuthManagerProps> = ({ children }) => {
     // 페이지 포커스 복원 시 토큰 유효성 확인
     const handleFocus = () => {
       // 세션 쿠키 기반이므로 별도 확인 불필요
-      console.log('[AuthManager] 페이지 포커스 복원');
     };
 
     // 이벤트 리스너 등록

@@ -20,7 +20,6 @@ async function verifyToken(token: string): Promise<any> {
       issuer: 'sonaverse-admin',
       audience: 'admin-users'
     });
-    console.log('[미들웨어] 토큰 검증 성공:', { id: payload.id, email: payload.email, exp: payload.exp });
     return payload;
   } catch (error) {
     console.error('Token verification failed in middleware:', error);
@@ -35,7 +34,6 @@ async function verifyToken(token: string): Promise<any> {
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  console.log('[미들웨어] 요청 경로:', pathname);
 
   // 방문자 분석 로깅
   analyticsMiddleware(request);
@@ -45,7 +43,6 @@ export async function middleware(request: NextRequest) {
     try {
       // 쿠키에서 토큰 가져오기 (COOKIE_NAME 상수 사용)
       const token = request.cookies.get(COOKIE_NAME)?.value;
-      console.log('[미들웨어] 토큰 존재 여부:', !!token);
 
       // 토큰이 없거나 유효하지 않은 경우 로그인 페이지로 리다이렉트
       if (!token || !(await verifyToken(token))) {
@@ -53,9 +50,7 @@ export async function middleware(request: NextRequest) {
         // 로그인 후 원래 페이지로 돌아가기 위해 returnUrl 파라미터 추가
         // URL 인코딩 문제 수정: 원본 pathname을 한 번만 인코딩
         const encodedReturnUrl = encodeURIComponent(pathname);
-        console.log('[미들웨어] 인코딩된 returnUrl:', encodedReturnUrl);
         loginUrl.searchParams.set('returnUrl', encodedReturnUrl);
-        console.log('[미들웨어] 최종 로그인 URL:', loginUrl.toString());
         return NextResponse.redirect(loginUrl);
       }
     } catch (error) {
@@ -63,7 +58,6 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL('/admin/login', request.url);
       // URL 인코딩 문제 수정: 원본 pathname을 한 번만 인코딩
       const encodedReturnUrl = encodeURIComponent(pathname);
-      console.log('[미들웨어] 오류 시 인코딩된 returnUrl:', encodedReturnUrl);
       loginUrl.searchParams.set('returnUrl', encodedReturnUrl);
       return NextResponse.redirect(loginUrl);
     }
@@ -73,20 +67,15 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/admin/login') {
     try {
       const token = request.cookies.get(COOKIE_NAME)?.value;
-      console.log('[미들웨어] 로그인 페이지 토큰 존재 여부:', !!token);
       
       if (token && (await verifyToken(token))) {
-        console.log('[미들웨어] 이미 인증된 사용자, 대시보드로 리다이렉트');
         // returnUrl이 있으면 해당 URL로, 없으면 대시보드로 리다이렉트
         const returnUrl = request.nextUrl.searchParams.get('returnUrl');
         const decodedReturnUrl = returnUrl ? decodeURIComponent(returnUrl) : null;
         const isValidReturnUrl = decodedReturnUrl && decodedReturnUrl.startsWith('/admin');
         const finalUrl = isValidReturnUrl ? decodedReturnUrl : '/admin';
         
-        console.log('[미들웨어] 최종 리다이렉트 URL:', finalUrl);
         return NextResponse.redirect(new URL(finalUrl, request.url));
-      } else {
-        console.log('[미들웨어] 인증되지 않은 사용자, 로그인 페이지 유지');
       }
     } catch (error) {
       console.error('Middleware redirect error:', error);

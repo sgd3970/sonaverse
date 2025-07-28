@@ -39,12 +39,6 @@ export async function GET(request: NextRequest) {
       BrandStory.countDocuments()
     ]);
 
-    console.log('📊 전체 데이터 개수:', {
-      blogs: totalBlogs,
-      press: totalPress,
-      brandStories: totalBrandStories
-    });
-
     return NextResponse.json({
       visitors,
       searchKeywords: keywords,

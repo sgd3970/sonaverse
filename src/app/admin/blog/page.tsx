@@ -55,7 +55,7 @@ const AdminBlogPage: React.FC = () => {
 
   const handleTogglePublished = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`/api/blog/${id}`, {
+      const res = await fetch(`/api/blog/id/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ const AdminBlogPage: React.FC = () => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     
     try {
-      const res = await fetch(`/api/blog/${id}`, {
+      const res = await fetch(`/api/blog/id/${id}`, {
         method: 'DELETE',
         credentials: 'include', // 쿠키 기반 인증
       });

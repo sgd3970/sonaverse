@@ -86,11 +86,8 @@ const BlogPreviewModal: React.FC<BlogPreviewModalProps> = ({
   };
 
   if (!isOpen) {
-    console.log('Modal is not open');
     return null;
   }
-
-  console.log('Modal is open, formData:', formData);
 
   const content = formData.content[currentLanguage];
   const tags = parseTagsToArray(formData.tags);
@@ -99,8 +96,6 @@ const BlogPreviewModal: React.FC<BlogPreviewModalProps> = ({
     month: 'long',
     day: 'numeric'
   });
-
-  console.log('Preview Modal Data:', { formData, content, tags, currentLanguage });
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50">

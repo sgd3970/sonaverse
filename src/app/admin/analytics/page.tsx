@@ -98,7 +98,7 @@ const AnalyticsPage: React.FC = () => {
     if (!data) return null;
 
     const maxCount = Math.max(...data.visitors.trend.map(item => item.count));
-    const chartHeight = 200;
+    const chartHeight = 160; // h-40 (160px)에 맞춤
 
     const handlePeriodChange = async (newPeriod: 'daily' | 'weekly' | 'monthly') => {
       setVisitorPeriod(newPeriod);
@@ -156,9 +156,9 @@ const AnalyticsPage: React.FC = () => {
           </div>
         </div>
         <div className="relative h-48">
-          <div className="flex items-end justify-between h-40 space-x-1">
+          <div className="flex items-end justify-between h-40 space-x-1 overflow-hidden">
             {data.visitors.trend.map((item, index) => {
-              const height = maxCount > 0 ? (item.count / maxCount) * chartHeight : 0;
+              const height = maxCount > 0 ? Math.min((item.count / maxCount) * chartHeight, 160) : 0;
               return (
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div
@@ -334,10 +334,10 @@ const AnalyticsPage: React.FC = () => {
                        data.totals.brandStories}개
                 </span>
               </div>
-              <div className="flex items-end space-x-1 h-16">
+              <div className="flex items-end space-x-1 h-16 overflow-hidden">
                 {content.data.slice(-7).map((item, index) => {
                   const maxCount = Math.max(...content.data.map(d => d.count));
-                  const height = maxCount > 0 ? (item.count / maxCount) * 60 : 0;
+                  const height = maxCount > 0 ? Math.min((item.count / maxCount) * 60, 60) : 0;
                   return (
                     <div key={index} className="flex flex-col items-center flex-1">
                       <div

@@ -32,8 +32,6 @@ const EditBrandStoryPage: React.FC = () => {
 
   const fetchBrandStory = async () => {
     try {
-      console.log('Fetching brand story for slug:', slug);
-      
       const response = await fetch(`/api/brand-story/${slug}`);
       
       if (!response.ok) {
@@ -41,7 +39,6 @@ const EditBrandStoryPage: React.FC = () => {
       }
       
       const data = await response.json();
-      console.log('Brand story data:', data);
       
       setFormData({
         slug: data.slug,
@@ -159,8 +156,41 @@ const EditBrandStoryPage: React.FC = () => {
     setLoading(true);
 
     try {
-      // 임시로 성공 메시지만 표시 (API 연결 문제 해결 전까지)
-      console.log('Form data to submit:', formData);
+      const payload = {
+        slug: formData.slug,
+        content: {
+          ko: {
+            title: formData.content.ko.title,
+            subtitle: formData.content.ko.subtitle,
+            body: formData.content.ko.body,
+            thumbnail_url: thumbnailPreview || formData.content.ko.thumbnail_url,
+            images: formData.content.ko.images
+          },
+          en: {
+            title: formData.content.en.title,
+            subtitle: formData.content.en.subtitle,
+            body: formData.content.en.body,
+            thumbnail_url: thumbnailPreview || formData.content.en.thumbnail_url,
+            images: formData.content.en.images
+          }
+        },
+        tags: parseTagsToArray(formData.tags),
+        is_published: formData.is_published
+      };
+
+      const response = await fetch(`/api/brand-story/${formData.slug}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '브랜드 스토리 수정에 실패했습니다.');
+      }
       
       addToast({
         type: 'success',

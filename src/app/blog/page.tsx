@@ -109,10 +109,8 @@ const BlogPage: React.FC = () => {
   const hasMore = visibleCount < blogPosts.length;
 
   if (blogPosts && blogPosts.length > 0) {
-    console.log('[블로그 목록] 렌더링 posts:', blogPosts);
     visiblePosts.forEach((post, idx) => {
       const content = post.content[i18n.language as keyof typeof post.content] || post.content.ko || post.content.en;
-      console.log(`[블로그 목록] 카드 #${idx} content:`, content);
     });
   }
 
