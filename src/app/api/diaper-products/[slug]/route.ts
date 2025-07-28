@@ -4,7 +4,7 @@ import DiaperProduct from '@/models/DiaperProduct';
 
 // GET - 특정 제품 조회 (활성화된 제품만)
 export async function GET(request: NextRequest, context: any) {
-  const { slug } = context.params;
+  const { slug } = await context.params;
   try {
     await dbConnect();
     const product = await DiaperProduct.findOne({ 
