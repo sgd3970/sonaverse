@@ -6,20 +6,18 @@ import { getCurrentUser } from '@/lib/auth-server';
 // GET - 특정 제품 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: { slug: string } }
 ) {
+  const { slug } = context.params;
   try {
     await dbConnect();
-    
-    const product = await DiaperProduct.findOne({ slug: params.slug });
-    
+    const product = await DiaperProduct.findOne({ slug });
     if (!product) {
       return NextResponse.json({
         success: false,
         error: '제품을 찾을 수 없습니다.'
       }, { status: 404 });
     }
-    
     return NextResponse.json({
       success: true,
       product
@@ -36,20 +34,18 @@ export async function GET(
 // PUT - 제품 수정
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: { slug: string } }
 ) {
+  const { slug } = context.params;
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ success: false, error: '인증이 필요합니다.' }, { status: 401 });
     }
-    
     await dbConnect();
-    
     const body = await request.json();
-    
     // slug 변경 시 중복 확인
-    if (body.slug && body.slug !== params.slug) {
+    if (body.slug && body.slug !== slug) {
       const existingProduct = await DiaperProduct.findOne({ slug: body.slug });
       if (existingProduct) {
         return NextResponse.json({
@@ -58,20 +54,17 @@ export async function PUT(
         }, { status: 400 });
       }
     }
-    
     const product = await DiaperProduct.findOneAndUpdate(
-      { slug: params.slug },
+      { slug },
       body,
       { new: true, runValidators: true }
     );
-    
     if (!product) {
       return NextResponse.json({
         success: false,
         error: '제품을 찾을 수 없습니다.'
       }, { status: 404 });
     }
-    
     return NextResponse.json({
       success: true,
       product
@@ -88,25 +81,22 @@ export async function PUT(
 // DELETE - 제품 삭제
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: { slug: string } }
 ) {
+  const { slug } = context.params;
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ success: false, error: '인증이 필요합니다.' }, { status: 401 });
     }
-    
     await dbConnect();
-    
-    const product = await DiaperProduct.findOneAndDelete({ slug: params.slug });
-    
+    const product = await DiaperProduct.findOneAndDelete({ slug });
     if (!product) {
       return NextResponse.json({
         success: false,
         error: '제품을 찾을 수 없습니다.'
       }, { status: 404 });
     }
-    
     return NextResponse.json({
       success: true,
       message: '제품이 삭제되었습니다.'
