@@ -53,9 +53,8 @@ const BodeumDiaperPage: React.FC = () => {
   const categories = [
     { value: '', label: '전체보기' },
     { value: '팬티형', label: '팬티형' },
-    { value: '밴드형', label: '밴드형' },
-    { value: '물티슈', label: '물티슈' },
-    { value: '기타', label: '기타' }
+    { value: '속기저귀', label: '속기저귀' },
+    { value: '깔개매트', label: '깔개매트' }
   ];
 
   const getLocalizedText = (obj: { ko: string; en: string }, lang: string): string => {

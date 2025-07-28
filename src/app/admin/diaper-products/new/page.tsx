@@ -75,7 +75,7 @@ const NewDiaperProductPage: React.FC = () => {
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof FormData],
+          ...(prev[parent as keyof FormData] as Record<string, any>),
           [child]: value
         }
       }));
@@ -129,9 +129,8 @@ const NewDiaperProductPage: React.FC = () => {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="팬티형">팬티형</option>
-                  <option value="밴드형">밴드형</option>
-                  <option value="물티슈">물티슈</option>
-                  <option value="기타">기타</option>
+                  <option value="속기저귀">속기저귀</option>
+                  <option value="깔개매트">깔개매트</option>
                 </select>
               </div>
             </div>
@@ -203,7 +202,7 @@ const NewDiaperProductPage: React.FC = () => {
                   썸네일 이미지 *
                 </label>
                 <ImageUpload
-                  onImageUploaded={(url) => handleInputChange('thumbnail_image', url)}
+                  onImageUpload={(url: string) => handleInputChange('thumbnail_image', url)}
                   currentImage={formData.thumbnail_image}
                 />
               </div>
@@ -212,19 +211,21 @@ const NewDiaperProductPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   제품 이미지들 *
                 </label>
+                <p className="text-sm text-gray-500 mb-4">
+                  현재는 첫 번째 이미지만 업로드 가능합니다. 추가 이미지는 수정 페이지에서 업로드해주세요.
+                </p>
                 <ImageUpload
-                  onImageUploaded={(url) => {
+                  onImageUpload={(url: string) => {
                     setFormData(prev => ({
                       ...prev,
-                      product_images: [...prev.product_images, url]
+                      product_images: [url]
                     }));
                   }}
-                  multiple={true}
-                  currentImages={formData.product_images}
-                  onImageRemoved={(index) => {
+                  currentImage={formData.product_images[0] || ''}
+                  onImageRemove={() => {
                     setFormData(prev => ({
                       ...prev,
-                      product_images: prev.product_images.filter((_, i) => i !== index)
+                      product_images: []
                     }));
                   }}
                 />
@@ -234,19 +235,21 @@ const NewDiaperProductPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   상세 페이지 이미지들
                 </label>
+                <p className="text-sm text-gray-500 mb-4">
+                  현재는 첫 번째 이미지만 업로드 가능합니다. 추가 이미지는 수정 페이지에서 업로드해주세요.
+                </p>
                 <ImageUpload
-                  onImageUploaded={(url) => {
+                  onImageUpload={(url: string) => {
                     setFormData(prev => ({
                       ...prev,
-                      detail_images: [...prev.detail_images, url]
+                      detail_images: [url]
                     }));
                   }}
-                  multiple={true}
-                  currentImages={formData.detail_images}
-                  onImageRemoved={(index) => {
+                  currentImage={formData.detail_images[0] || ''}
+                  onImageRemove={() => {
                     setFormData(prev => ({
                       ...prev,
-                      detail_images: prev.detail_images.filter((_, i) => i !== index)
+                      detail_images: []
                     }));
                   }}
                 />

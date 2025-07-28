@@ -61,7 +61,7 @@ const DiaperProductSchema = new Schema<IDiaperProduct>({
   category: {
     type: String,
     required: true,
-    enum: ['팬티형', '밴드형', '물티슈', '기타']
+    enum: ['팬티형', '속기저귀', '깔개매트']
   },
   is_active: {
     type: Boolean,
