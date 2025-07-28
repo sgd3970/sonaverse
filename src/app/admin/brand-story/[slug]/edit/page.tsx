@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import TiptapEditor from '@/components/admin/TiptapEditor';
+import SlugChecker from '@/components/admin/SlugChecker';
 
 interface BrandStoryFormData {
   slug: string;
@@ -26,6 +27,9 @@ const EditBrandStoryPage: React.FC = () => {
   const [formData, setFormData] = useState<BrandStoryFormData | null>(null);
   const [loading, setLoading] = useState(false);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [hasSlugConflict, setHasSlugConflict] = useState(false);
+  const [isSlugValidated, setIsSlugValidated] = useState(false);
+  const [originalSlug, setOriginalSlug] = useState('');
 
   useEffect(() => {
     fetchBrandStory();
@@ -65,6 +69,8 @@ const EditBrandStoryPage: React.FC = () => {
         is_published: brandStory.is_published || false
       });
       
+      setOriginalSlug(brandStory.slug);
+      
       if (brandStory.content?.ko?.thumbnail_url) {
         setThumbnailPreview(brandStory.content.ko.thumbnail_url);
       }
@@ -84,6 +90,14 @@ const EditBrandStoryPage: React.FC = () => {
       ...formData,
       [field]: value
     });
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!formData) return;
+    const value = e.target.value;
+    // 영문, 하이픈, 숫자만 허용
+    const sanitizedValue = value.replace(/[^a-zA-Z0-9-]/g, '');
+    handleInputChange('slug', sanitizedValue);
   };
 
   const handleContentChange = (lang: string, field: string, value: string) => {
@@ -267,15 +281,23 @@ const EditBrandStoryPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   슬러그 (URL)
                 </label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  disabled
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  슬러그는 수정할 수 없습니다.
-                </p>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    onChange={handleSlugChange}
+                    placeholder="brand-story-slug"
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <div className="flex-shrink-0">
+                    <SlugChecker
+                      slug={formData.slug}
+                      originalSlug={originalSlug}
+                      onCheck={setHasSlugConflict}
+                      onValidated={setIsSlugValidated}
+                    />
+                  </div>
+                </div>
               </div>
               
               <div>

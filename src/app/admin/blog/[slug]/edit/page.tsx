@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import TiptapEditor from '@/components/admin/TiptapEditor';
+import SlugChecker from '@/components/admin/SlugChecker';
 import { useToast } from '@/components/Toast';
 
 interface BlogFormData {
@@ -25,6 +26,8 @@ const EditBlogPage: React.FC = () => {
   const [formData, setFormData] = useState<BlogFormData | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [hasSlugConflict, setHasSlugConflict] = useState(false);
+  const [originalSlug, setOriginalSlug] = useState('');
   
   // 에디터 ref 추가
   const koEditorRef = useRef<any>(null);
@@ -70,6 +73,8 @@ const EditBlogPage: React.FC = () => {
         tags: (data.tags || []).join(', '),
         is_published: data.is_published || false
       });
+
+      setOriginalSlug(data.slug);
 
       // 기존 썸네일이 있으면 미리보기 설정
       if (data.content.ko?.thumbnail_url) {
@@ -209,6 +214,15 @@ const EditBlogPage: React.FC = () => {
       addToast({
         type: 'error',
         message: '한국어 본문을 입력해주세요.'
+      });
+      return;
+    }
+
+    // 슬러그가 변경되었고 중복이 있는 경우
+    if (formData.slug !== originalSlug && hasSlugConflict) {
+      addToast({
+        type: 'error',
+        message: '슬러그가 중복됩니다. 다른 슬러그를 사용해주세요.'
       });
       return;
     }

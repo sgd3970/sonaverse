@@ -6,6 +6,7 @@ import Link from 'next/link';
 import TiptapEditor, { TiptapEditorRef } from '@/components/admin/TiptapEditor';
 import BlogPreviewModal from '@/components/admin/BlogPreviewModal';
 import FloatingToolbar from '@/components/admin/FloatingToolbar';
+import SlugChecker from '@/components/admin/SlugChecker';
 import { useToast } from '@/components/Toast';
 
 const NewBlogPage: React.FC = () => {
@@ -23,6 +24,8 @@ const NewBlogPage: React.FC = () => {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
+  const [hasSlugConflict, setHasSlugConflict] = useState(false);
+  const [isSlugValidated, setIsSlugValidated] = useState(false);
   
   // 에디터 ref 추가
   const koEditorRef = useRef<TiptapEditorRef>(null);
@@ -97,7 +100,9 @@ const NewBlogPage: React.FC = () => {
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    handleInputChange('slug', value);
+    // 영문, 하이픈, 숫자만 허용
+    const sanitizedValue = value.replace(/[^a-zA-Z0-9-]/g, '');
+    handleInputChange('slug', sanitizedValue);
   };
 
   const parseTagsToArray = (tagsString: string): string[] => {
@@ -114,6 +119,22 @@ const NewBlogPage: React.FC = () => {
       addToast({
         type: 'error',
         message: '필수 필드를 모두 입력해주세요.'
+      });
+      return;
+    }
+
+    if (!isSlugValidated) {
+      addToast({
+        type: 'error',
+        message: '슬러그 중복 확인을 완료해주세요.'
+      });
+      return;
+    }
+
+    if (hasSlugConflict) {
+      addToast({
+        type: 'error',
+        message: '슬러그가 중복됩니다. 다른 슬러그를 사용해주세요.'
       });
       return;
     }
@@ -217,34 +238,42 @@ const NewBlogPage: React.FC = () => {
   return (
     <div className="bg-gray-50">
       <div className="max-w-5xl mx-auto p-6">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">새 블로그 포스트 작성</h1>
-            <Link
-              href="/admin/blog"
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              ← 목록으로 돌아가기
-            </Link>
-          </div>
+        {/* 헤더 */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">새 블로그 글 작성</h1>
+          <Link
+            href="/admin/blog"
+            className="bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-amber-800 transition-colors"
+          >
+            뒤로가기
+          </Link>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 기본 정보 */}
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <h2 className="text-lg font-semibold mb-4 text-gray-800">기본 정보</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  슬러그 (URL) *
+                  슬러그 *
                 </label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  onChange={handleSlugChange}
-                  placeholder="예: my-blog-post"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    onChange={handleSlugChange}
+                    placeholder="예: my-blog-post"
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <div className="flex-shrink-0">
+                    <SlugChecker 
+                      slug={formData.slug} 
+                      onCheck={setHasSlugConflict}
+                      onValidated={setIsSlugValidated}
+                    />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

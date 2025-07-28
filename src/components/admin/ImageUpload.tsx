@@ -4,20 +4,20 @@ import React, { useState, useRef } from 'react';
 
 interface ImageUploadProps {
   onImageUpload: (url: string) => void;
-  onImageRemove?: () => void;
   currentImage?: string;
   label?: string;
   accept?: string;
   maxSize?: number; // MB
+  slug?: string; // 슬러그 추가
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   onImageUpload,
-  onImageRemove,
   currentImage,
   label = '이미지 업로드',
   accept = 'image/*',
-  maxSize = 10
+  maxSize = 10,
+  slug = ''
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -71,8 +71,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       // FormData 생성
       const formData = new FormData();
       formData.append('file', file);
+      
+      // 파일명 생성 (슬러그 + thumbnail)
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const customFilename = `${slug}_thumbnail`;
+      formData.append('filename', customFilename);
 
-      // API 호출 (실제로는 /api/upload 엔드포인트를 만들어야 함)
+      // API 호출
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -95,12 +100,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     fileInputRef.current?.click();
   };
 
-  const handleRemove = () => {
-    if (onImageRemove) {
-      onImageRemove();
-    }
-  };
-
   return (
     <div className="space-y-4">
       <label className="block text-sm font-medium text-gray-700">
@@ -114,22 +113,16 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             src={currentImage}
             alt="Current"
             className="w-32 h-32 object-cover rounded-lg border"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/logo/nonImage_logo.png';
+            }}
           />
-          {onImageRemove && (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
-            >
-              ×
-            </button>
-          )}
         </div>
       )}
 
-      {/* 업로드 영역 */}
+      {/* 업로드 영역 - 전체 클릭 가능 */}
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
           dragActive
             ? 'border-blue-500 bg-blue-50'
             : 'border-gray-300 hover:border-gray-400'
@@ -138,6 +131,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
+        onClick={handleClick}
       >
         <input
           ref={fileInputRef}
@@ -154,14 +148,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               '업로드 중...'
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={handleClick}
-                  className="text-blue-600 hover:text-blue-500 font-medium"
-                >
-                  클릭하여 파일 선택
-                </button>
-                {' '}또는 드래그 앤 드롭
+                클릭하여 파일 선택 또는 드래그 앤 드롭
               </>
             )}
           </div>

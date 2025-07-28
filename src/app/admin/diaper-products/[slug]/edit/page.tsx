@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ImageUpload from '@/components/admin/ImageUpload';
 import MultipleImageUpload from '@/components/admin/MultipleImageUpload';
+import ProductPreviewModal from '@/components/admin/ProductPreviewModal';
+import SlugChecker from '@/components/admin/SlugChecker';
 
 interface FormData {
   slug: string;
@@ -39,6 +41,20 @@ const EditDiaperProductPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState<FormData | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [hasSlugConflict, setHasSlugConflict] = useState(false);
+  const [originalSlug, setOriginalSlug] = useState('');
+  const [isSlugValidated, setIsSlugValidated] = useState(false);
+
+  const handlePreview = () => {
+    if (!formData.slug || !formData.name.ko || !formData.name.en) {
+      alert('미리보기를 위해 슬러그, 제품명(한국어), 제품명(영어)을 입력해주세요.');
+      return;
+    }
+    setPreviewProduct(formData);
+    setIsPreviewOpen(true);
+  };
 
   useEffect(() => {
     fetchProduct();
@@ -53,6 +69,7 @@ const EditDiaperProductPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setFormData(data.product);
+        setOriginalSlug(data.product.slug);
       } else {
         alert('제품을 불러올 수 없습니다.');
         router.push('/admin/diaper-products');
@@ -71,6 +88,18 @@ const EditDiaperProductPage: React.FC = () => {
     
     if (!formData.slug || !formData.name.ko || !formData.name.en) {
       alert('필수 항목을 모두 입력해주세요.');
+      return;
+    }
+
+    // 슬러그가 변경되었고 검증되지 않은 경우
+    if (formData.slug !== originalSlug && !isSlugValidated) {
+      alert('슬러그 중복 확인을 완료해주세요.');
+      return;
+    }
+
+    // 슬러그가 변경되었고 중복이 있는 경우
+    if (formData.slug !== originalSlug && hasSlugConflict) {
+      alert('슬러그가 중복됩니다. 다른 슬러그를 사용해주세요.');
       return;
     }
 
@@ -118,6 +147,13 @@ const EditDiaperProductPage: React.FC = () => {
     }
   };
 
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 영문, 하이픈, 숫자만 허용
+    const sanitizedValue = value.replace(/[^a-zA-Z0-9-]/g, '');
+    handleInputChange('slug', sanitizedValue);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -152,14 +188,24 @@ const EditDiaperProductPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   슬러그 *
                 </label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  onChange={(e) => handleInputChange('slug', e.target.value)}
-                  placeholder="product-slug"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    onChange={handleSlugChange}
+                    placeholder="product-slug"
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <div className="flex-shrink-0">
+                    <SlugChecker
+                      slug={formData.slug}
+                      originalSlug={originalSlug}
+                      onCheck={setHasSlugConflict}
+                      onValidated={setIsSlugValidated}
+                    />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -246,6 +292,7 @@ const EditDiaperProductPage: React.FC = () => {
                 <ImageUpload
                   onImageUpload={(url: string) => handleInputChange('thumbnail_image', url)}
                   currentImage={formData.thumbnail_image}
+                  slug={formData.slug}
                 />
               </div>
 
@@ -267,6 +314,8 @@ const EditDiaperProductPage: React.FC = () => {
                     }));
                   }}
                   currentImages={formData.product_images}
+                  slug={formData.slug}
+                  type="product"
                 />
               </div>
 
@@ -288,26 +337,24 @@ const EditDiaperProductPage: React.FC = () => {
                     }));
                   }}
                   currentImages={formData.detail_images}
+                  slug={formData.slug}
+                  type="detail"
                 />
               </div>
             </div>
 
-            {/* 상태 */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="is_active"
-                checked={formData.is_active}
-                onChange={(e) => handleInputChange('is_active', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
-                활성화
-              </label>
-            </div>
+            {/* 상태 - 항상 활성화로 설정 */}
+            <input type="hidden" value="true" />
 
             {/* 제출 버튼 */}
             <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={handlePreview}
+                className="bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+              >
+                미리보기
+              </button>
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -317,7 +364,7 @@ const EditDiaperProductPage: React.FC = () => {
               </button>
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || (formData.slug !== originalSlug && (!isSlugValidated || hasSlugConflict))}
                 className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {saving ? '저장 중...' : '제품 수정'}
@@ -326,6 +373,11 @@ const EditDiaperProductPage: React.FC = () => {
           </form>
         </div>
       </div>
+      <ProductPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        product={previewProduct}
+      />
     </div>
   );
 };

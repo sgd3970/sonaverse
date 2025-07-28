@@ -9,6 +9,8 @@ interface MultipleImageUploadProps {
   label?: string;
   accept?: string;
   maxSize?: number; // MB
+  slug?: string; // 슬러그 추가
+  type?: 'product' | 'detail'; // 이미지 타입 추가
 }
 
 const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
@@ -17,7 +19,9 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
   currentImages,
   label = '이미지 업로드',
   accept = 'image/*',
-  maxSize = 10
+  maxSize = 10,
+  slug = '',
+  type = 'product'
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -71,6 +75,19 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
       // FormData 생성
       const formData = new FormData();
       formData.append('file', file);
+      
+      // 파일명 생성 (슬러그 + 타입 + 순서)
+      const currentCount = currentImages.length;
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      let customFilename = '';
+      
+      if (type === 'product') {
+        customFilename = `${slug}_pd${currentCount + 1}`;
+      } else if (type === 'detail') {
+        customFilename = `${slug}_dtpd${currentCount + 1}`;
+      }
+      
+      formData.append('filename', customFilename);
 
       // API 호출
       const response = await fetch('/api/upload', {
@@ -126,9 +143,9 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
         </div>
       )}
 
-      {/* 업로드 영역 */}
+      {/* 업로드 영역 - 전체 클릭 가능 */}
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
           dragActive
             ? 'border-blue-500 bg-blue-50'
             : 'border-gray-300 hover:border-gray-400'
@@ -137,6 +154,7 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
+        onClick={handleClick}
       >
         <input
           ref={fileInputRef}
@@ -153,14 +171,7 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
               '업로드 중...'
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={handleClick}
-                  className="text-blue-600 hover:text-blue-500 font-medium"
-                >
-                  클릭하여 파일 선택
-                </button>
-                {' '}또는 드래그 앤 드롭
+                클릭하여 파일 선택 또는 드래그 앤 드롭
               </>
             )}
           </div>

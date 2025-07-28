@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast';
 import TiptapEditor, { TiptapEditorRef } from '@/components/admin/TiptapEditor';
 import FloatingToolbar from '@/components/admin/FloatingToolbar';
 import BrandStoryPreviewModal from '@/components/admin/BrandStoryPreviewModal';
+import SlugChecker from '@/components/admin/SlugChecker';
 
 interface IBlogPostImage {
   src: string;
@@ -37,6 +38,8 @@ const NewBrandStoryPage: React.FC = () => {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
+  const [hasSlugConflict, setHasSlugConflict] = useState(false);
+  const [isSlugValidated, setIsSlugValidated] = useState(false);
   
   // 에디터 ref 추가
   const koEditorRef = useRef<TiptapEditorRef>(null);
@@ -50,6 +53,13 @@ const NewBrandStoryPage: React.FC = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 영문, 하이픈, 숫자만 허용
+    const sanitizedValue = value.replace(/[^a-zA-Z0-9-]/g, '');
+    handleInputChange('slug', sanitizedValue);
   };
 
   const handleContentChange = (lang: string, field: string, value: string) => {
@@ -148,6 +158,23 @@ const NewBrandStoryPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isSlugValidated) {
+      addToast({
+        type: 'error',
+        message: '슬러그 중복 확인을 완료해주세요.'
+      });
+      return;
+    }
+    
+    if (hasSlugConflict) {
+      addToast({
+        type: 'error',
+        message: '슬러그가 중복됩니다. 다른 슬러그를 사용해주세요.'
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -290,14 +317,23 @@ const NewBrandStoryPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   슬러그 (URL) *
                 </label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  onChange={(e) => handleInputChange('slug', e.target.value)}
-                  placeholder="예: brand-story-2025"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    onChange={handleSlugChange}
+                    placeholder="예: brand-story-2025"
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <div className="flex-shrink-0">
+                    <SlugChecker
+                      slug={formData.slug}
+                      onCheck={setHasSlugConflict}
+                      onValidated={setIsSlugValidated}
+                    />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

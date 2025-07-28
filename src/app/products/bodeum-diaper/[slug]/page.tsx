@@ -86,7 +86,7 @@ const DiaperProductDetailPage: React.FC = () => {
         {/* 뒤로가기 버튼 */}
         <button
           onClick={() => router.back()}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
+          className="flex items-center text-gray-600 hover:text-[#bda191] mb-8 transition-colors"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -154,7 +154,9 @@ const DiaperProductDetailPage: React.FC = () => {
             {/* 구매 버튼 */}
             <div className="pt-6">
               <a
-                href="/inquiry"
+                href="https://bodume.com/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-full bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
               >
                 제품 구매 문의하기
@@ -168,7 +170,7 @@ const DiaperProductDetailPage: React.FC = () => {
 
         {/* 상세 페이지 이미지들 */}
         {product.detail_images.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-0">
             {product.detail_images.map((image, index) => (
               <div key={index} className="w-full">
                 <img
