@@ -39,31 +39,32 @@ const EditBrandStoryPage: React.FC = () => {
       }
       
       const data = await response.json();
+      const brandStory = data.brandStory;
       
       setFormData({
-        slug: data.slug,
+        slug: brandStory.slug,
         content: {
           ko: {
-            title: data.content?.ko?.title || '',
-            subtitle: data.content?.ko?.subtitle || '',
-            body: data.content?.ko?.body || '',
-            thumbnail_url: data.content?.ko?.thumbnail_url || '',
-            images: data.content?.ko?.images || []
+            title: brandStory.content?.ko?.title || '',
+            subtitle: brandStory.content?.ko?.subtitle || '',
+            body: brandStory.content?.ko?.body || '',
+            thumbnail_url: brandStory.content?.ko?.thumbnail_url || '',
+            images: brandStory.content?.ko?.images || []
           },
           en: {
-            title: data.content?.en?.title || '',
-            subtitle: data.content?.en?.subtitle || '',
-            body: data.content?.en?.body || '',
-            thumbnail_url: data.content?.en?.thumbnail_url || '',
-            images: data.content?.en?.images || []
+            title: brandStory.content?.en?.title || '',
+            subtitle: brandStory.content?.en?.subtitle || '',
+            body: brandStory.content?.en?.body || '',
+            thumbnail_url: brandStory.content?.en?.thumbnail_url || '',
+            images: brandStory.content?.en?.images || []
           }
         },
-        tags: data.tags ? data.tags.join(', ') : '',
-        is_published: data.is_published || false
+        tags: brandStory.tags ? brandStory.tags.join(', ') : '',
+        is_published: brandStory.is_published || false
       });
       
-      if (data.content?.ko?.thumbnail_url) {
-        setThumbnailPreview(data.content.ko.thumbnail_url);
+      if (brandStory.content?.ko?.thumbnail_url) {
+        setThumbnailPreview(brandStory.content.ko.thumbnail_url);
       }
     } catch (error) {
       console.error('Error fetching brand story:', error);

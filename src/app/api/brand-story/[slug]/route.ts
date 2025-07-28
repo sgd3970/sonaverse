@@ -22,7 +22,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      ...brandStory.toObject()
+      brandStory: brandStory.toObject()
     });
   } catch (error) {
     console.error('GET /api/brand-story/[slug] error:', error);
